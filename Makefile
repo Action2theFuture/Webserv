@@ -12,7 +12,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 
 SRC = main.cpp Server.cpp Request.cpp Response.cpp Utils.cpp \
-	CGIHandler.cpp Configuration.cpp
+	CGIHandler.cpp Configuration.cpp SocketManager.cpp RequestHandler.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRC))
 
