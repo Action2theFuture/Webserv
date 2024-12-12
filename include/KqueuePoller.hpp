@@ -13,9 +13,9 @@ public:
     KqueuePoller();
     ~KqueuePoller();
     
-    void add(int fd, uint32_t events);
-    void modify(int fd, uint32_t events);
-    void remove(int fd);
+    bool add(int fd, uint32_t events);
+    bool modify(int fd, uint32_t events);
+    bool remove(int fd);
     int poll(std::vector<Event> &events_out, int timeout = -1);
 
 private:

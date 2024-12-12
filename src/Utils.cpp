@@ -1,10 +1,4 @@
 #include "Utils.hpp"
-#include <algorithm>
-#include <limits.h>
-#include <stdlib.h>
-#include <fstream>
-#include <iostream>
-
 
 std::string getMimeType(const std::string &path) {
     size_t dot = path.find_last_of('.');
@@ -55,12 +49,55 @@ std::string normalizePath(const std::string &path) {
     return normalized;
 }
 
-void logError(const std::string &message) {
-    std::ofstream log_file("error.log", std::ios::app);
-    if (log_file.is_open()) {
-        log_file << message << std::endl;
-        log_file.close();
+void ensureLogDirectoryExists() {
+    const char* logDir = "./logs";
+    struct stat st;
+    if (stat(logDir, &st) == -1) {
+        if (mkdir(logDir, 0755) == -1) {
+            std::cerr << "Error: Failed to create log directory " << logDir << ": " << strerror(errno) << std::endl;
+        } else {
+            std::cerr << "Log directory created: " << logDir << std::endl;
+        }
     }
-    // 추가적으로, 표준 에러에도 출력
+}
+
+void logError(const std::string &message) {
+    ensureLogDirectoryExists();
+    // 로그 파일 열기
+    std::ofstream log_file(LOG_FILE, std::ios::app);
+    
+    // 로그 파일 열기에 실패한 경우 파일 생성 시도
+    if (!log_file.is_open()) {
+        // 파일 생성 시도
+        std::ofstream create_file(LOG_FILE);
+        if (!create_file.is_open()) {
+            std::cerr << "Error: Failed to create log file " << LOG_FILE << std::endl;
+            // 표준 에러로만 출력
+            std::cerr << message << std::endl;
+            return;
+        }
+        create_file.close();
+        log_file.open(LOG_FILE, std::ios::app);
+        if (!log_file.is_open()) {
+            std::cerr << "Error: Failed to open newly created log file " << LOG_FILE << std::endl;
+            // 표준 에러로만 출력
+            std::cerr << message << std::endl;
+            return;
+        }
+    }
+
+    // 로그 파일에 기록
+    log_file << message << std::endl;
+    log_file.close();
+
+    // 표준 에러에도 출력
     std::cerr << message << std::endl;
+}
+
+std::string trim(const std::string &str) {
+    size_t first = str.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos)
+        return "";
+    size_t last = str.find_last_not_of(" \t\r\n");
+    return str.substr(first, (last - first + 1));
 }

@@ -2,17 +2,6 @@
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Utils.hpp"
-#include <unistd.h>
-#include <sys/wait.h>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <vector>
-#include <sstream>
-#include <fcntl.h>      // open, fcntl
-#include <sys/stat.h>   // struct stat
-#include <sys/types.h>  // data types
-#include <errno.h>      // errno
 
 CGIHandler::CGIHandler() {
     // 생성자: 필요한 초기화 수행

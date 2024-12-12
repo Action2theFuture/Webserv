@@ -16,9 +16,9 @@ struct Event {
 class Poller {
 public:
     virtual ~Poller() {}
-    virtual void add(int fd, uint32_t events) = 0;
-    virtual void modify(int fd, uint32_t events) = 0;
-    virtual void remove(int fd) = 0;
+    virtual bool add(int fd, uint32_t events) = 0;
+    virtual bool modify(int fd, uint32_t events) = 0;
+    virtual bool remove(int fd) = 0;
     virtual int poll(std::vector<Event> &events, int timeout = -1) = 0;
 };
 

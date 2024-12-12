@@ -5,16 +5,19 @@
 
 #include "Poller.hpp"
 #include <sys/epoll.h>
-
+#include <cstring>
+#include <iostream>
+#include <cstdlib>
+#include <unistd.h>
 
 class EpollPoller : public Poller {
 public:
     EpollPoller();
     ~EpollPoller();
     
-    void add(int fd, uint32_t events);
-    void modify(int fd, uint32_t events);
-    void remove(int fd);
+    bool add(int fd, uint32_t events);
+    bool modify(int fd, uint32_t events);
+    bool remove(int fd);
     int poll(std::vector<Event> &events, int timeout = -1);
 
 private:
