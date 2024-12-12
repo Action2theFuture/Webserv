@@ -1,5 +1,4 @@
 #include "Request.hpp"
-#include <sstream>
 
 Request::Request() : method("GET"), path("/"), query_string(""), headers() {}
 Request::~Request() {}

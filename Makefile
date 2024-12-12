@@ -11,8 +11,8 @@ IFLAGS = -I ./include/
 SRC_DIR = src
 OBJ_DIR = obj
 
-SRC = main.cpp Server.cpp Client.cpp Request.cpp Response.cpp Utils.cpp \
-	CGIHandler.cpp
+SRC = main.cpp Server.cpp Request.cpp Response.cpp Utils.cpp \
+	CGIHandler.cpp Configuration.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRC))
 

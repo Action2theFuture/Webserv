@@ -18,16 +18,25 @@ KqueuePoller::~KqueuePoller() {
     close(kqueue_fd);
 }
 
-void KqueuePoller::add(int fd, uint32_t events) {
+bool KqueuePoller::add(int fd, uint32_t events) {
     if (events & POLLER_READ) {
         EV_SET(&changes[changelist_count++], fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
     }
     if (events & POLLER_WRITE) {
         EV_SET(&changes[changelist_count++], fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
     }
+    // kevent 호출로 변경 사항 적용
+    if (kevent(kqueue_fd, changes, changelist_count, NULL, 0, NULL) == -1) {
+        perror("kevent add failed");
+        changelist_count = 0; // 초기화
+        return false;
+    }
+
+    changelist_count = 0; // 초기화
+    return true;
 }
 
-void KqueuePoller::modify(int fd, uint32_t events) {
+bool KqueuePoller::modify(int fd, uint32_t events) {
     // 먼저 기존 필터를 삭제
     EV_SET(&changes[changelist_count++], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
     EV_SET(&changes[changelist_count++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
@@ -39,11 +48,34 @@ void KqueuePoller::modify(int fd, uint32_t events) {
     if (events & POLLER_WRITE) {
         EV_SET(&changes[changelist_count++], fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
     }
+    // kevent 호출로 변경 사항 적용
+    if (kevent(kqueue_fd, changes, changelist_count, NULL, 0, NULL) == -1) {
+        perror("kevent modify failed");
+        changelist_count = 0; // 초기화
+        return false;
+    }
+
+    changelist_count = 0; // 초기화
+    return true;
 }
 
-void KqueuePoller::remove(int fd) {
+bool KqueuePoller::remove(int fd) {
+    if (fd < 0)
+        return false;
     EV_SET(&changes[changelist_count++], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
     EV_SET(&changes[changelist_count++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+
+    // kevent 호출로 변경 사항 적용
+    if (kevent(kqueue_fd, changes, changelist_count, NULL, 0, NULL) == -1) {
+        if (errno != ENOENT) {
+            perror("kevent remove failed");
+            changelist_count = 0; // 초기화
+            return false;
+        }
+    }
+
+    changelist_count = 0; // 초기화
+    return true;
 }
 
 int KqueuePoller::poll(std::vector<Event> &events_out, int timeout) {
@@ -61,12 +93,18 @@ int KqueuePoller::poll(std::vector<Event> &events_out, int timeout) {
     changelist_count = 0; // 변경 사항 초기화
     
     if (nevents == -1) {
-        perror("kevent");
+        perror("kevent poll failed");
         return -1;
     }
 
+   // 이벤트 변환 및 반환
     events_out.clear();
     for (int i = 0; i < nevents; ++i) {
+        if (events[i].flags & EV_ERROR) {
+            std::cerr << "Event error on fd " << events[i].ident << ": " << strerror(events[i].data) << std::endl;
+            continue;
+        }
+
         Event ev;
         ev.fd = events[i].ident;
         ev.events = 0;

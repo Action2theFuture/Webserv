@@ -3,6 +3,17 @@
 
 #include <string>
 #include <map>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <vector>
+#include <sstream>
+#include <fcntl.h>      // open, fcntl
+#include <sys/stat.h>   // struct stat
+#include <sys/types.h>  // data types
+#include <errno.h>      // errno
 
 class Request;
 class Response;
