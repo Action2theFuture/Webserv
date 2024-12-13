@@ -22,7 +22,7 @@ public:
     ~Response();
 
     // 정적 메서드로 응답 생성
-    static Response createResponse(const Request &request, const LocationConfig &location_config);
+    static Response createResponse(const Request &request, const LocationConfig &location_config, const ServerConfig &server_config);
 
     // 응답을 문자열로 변환
     std::string toString() const;

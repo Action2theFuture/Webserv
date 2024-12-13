@@ -1,4 +1,5 @@
-#include "ServerConfig.hpp"
+// Configuration.cpp
+#include "Configuration.hpp"
 #include "Utils.hpp"
 #include <fstream>
 #include <sstream>
@@ -28,7 +29,7 @@ bool Configuration::parseConfigFile(const std::string &filename) {
 
         // 세미콜론으로 끝나는 라인 처리
         if (line.back() == ';') {
-            line.pop_back(); // 세미콜론 제거
+            line.erase(line.size() - 1); // 세미콜론 제거
         }
 
         if (line.find("server {") != std::string::npos) {
@@ -39,9 +40,15 @@ bool Configuration::parseConfigFile(const std::string &filename) {
 
         if (in_server_block) {
             if (line.find("}") != std::string::npos) {
-                // 서버 블록 종료
-                servers.push_back(current_server);
-                in_server_block = false;
+                if (in_location_block) {
+                    // 위치 블록 종료
+                    current_server.locations.push_back(current_location);
+                    in_location_block = false;
+                } else {
+                    // 서버 블록 종료
+                    servers.push_back(current_server);
+                    in_server_block = false;
+                }
                 continue;
             }
 
@@ -60,6 +67,7 @@ bool Configuration::parseConfigFile(const std::string &filename) {
                 }
                 parseLocationConfig(line, current_location);
             } else {
+                // 서버 블록 내 설정 파싱
                 parseServerConfig(line, current_server);
             }
         }
@@ -79,10 +87,15 @@ LocationConfig Configuration::initializeLocationConfig(const std::string &line) 
     LocationConfig location;
     size_t start = line.find(' ') + 1;
     size_t end = line.find('{');
-    location.path = trim(line.substr(start, end - start));
+    if (start < end && end != std::string::npos) {
+        location.path = trim(line.substr(start, end - start));
+    } else {
+        location.path = "/";
+    }
     return location;
 }
 
+// 위치 설정 파싱
 void Configuration::parseLocationConfig(const std::string &line, LocationConfig &location_config) {
     std::istringstream iss(line);
     std::string key;
@@ -95,8 +108,6 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
         }
     } else if (key == "redirect") {
         iss >> location_config.redirect;
-    } else if (key == "root") {
-        iss >> location_config.root;
     } else if (key == "directory_listing") {
         std::string value;
         iss >> value;
@@ -111,11 +122,11 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     // 추가적인 위치 설정 항목 파싱
 }
 
+// 서버 설정 파싱
 void Configuration::parseServerConfig(const std::string &line, ServerConfig &server_config) {
     std::istringstream iss(line);
     std::string key;
     iss >> key;
-
     if (key == "listen") {
         iss >> server_config.port;
     } else if (key == "server_name") {
@@ -125,8 +136,21 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
     } else if (key == "error_page") {
         int error_code;
         std::string error_path;
-        iss >> error_code >> error_path;
-        server_config.error_pages[error_code] = error_path;
+        while (iss >> error_code >> error_path) {
+            std::string full_path;
+            if (!server_config.root.empty()) {
+                // root 끝에 '/'가 없으면 추가 (선택적 로직)
+                if (server_config.root[server_config.root.size() - 1] == '/') {
+                    full_path = server_config.root + error_path; 
+                } else {
+                    full_path = server_config.root + "/" + error_path; 
+                }
+            } else {
+                // root가 비어있다면 그대로 사용
+                full_path = error_path;
+            }
+            server_config.error_pages[error_code] = full_path;
+        }
     } else if (key == "client_max_body_size") {
         size_t size;
         iss >> size;
