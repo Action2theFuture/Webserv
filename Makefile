@@ -10,11 +10,14 @@ IFLAGS = -I ./include/
 
 SRC_DIR = src
 OBJ_DIR = obj
+RESPONSE_DIR = $(SRC_DIR)/Response
 
-SRC = main.cpp Server.cpp Request.cpp Response.cpp Utils.cpp \
+SRC = main.cpp Server.cpp Request.cpp Utils.cpp \
 	CGIHandler.cpp Configuration.cpp SocketManager.cpp RequestHandler.cpp
+RESPONSE = Response.cpp ResponseError.cpp ResponseHandler.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRC))
+SRCS += $(addprefix $(RESPONSE_DIR)/, $(RESPONSE))
 
 vpath %.cpp ./src/
 

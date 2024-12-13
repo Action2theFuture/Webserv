@@ -1,13 +1,14 @@
 #ifndef LOCATIONCONFIG_HPP
 #define LOCATIONCONFIG_HPP
 
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
 
 struct ServerConfig; // 전방 선언
 
-struct LocationConfig {
+struct LocationConfig
+{
     std::string path;
     std::vector<std::string> methods;
     std::string redirect;
@@ -20,12 +21,9 @@ struct LocationConfig {
 
     // 생성자: 기본값 설정
     LocationConfig()
-        : path("/"),
-          redirect(""),
-          directory_listing(false),
-          index("index.html"),
-          cgi_extension(""),
-          cgi_path("") {}
+        : path("/"), redirect(""), directory_listing(false), index("index.html"), cgi_extension(""), cgi_path("")
+    {
+    }
 };
 
 #endif // LOCATIONCONFIG_HPP

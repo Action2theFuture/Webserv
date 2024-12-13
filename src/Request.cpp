@@ -1,51 +1,63 @@
 #include "Request.hpp"
 
-Request::Request() : method("GET"), path("/"), query_string(""), headers() {}
-Request::~Request() {}
+Request::Request() : method("GET"), path("/"), query_string(""), headers()
+{
+}
+Request::~Request()
+{
+}
 
-std::string Request::getMethod() const {
+std::string Request::getMethod() const
+{
     return method;
 }
 
-std::string Request::getPath() const {
+std::string Request::getPath() const
+{
     return path;
 }
 
-std::string Request::getQueryString() const {
+std::string Request::getQueryString() const
+{
     return query_string;
 }
 
-std::map<std::string, std::string> Request::getHeaders() const {
+std::map<std::string, std::string> Request::getHeaders() const
+{
     return headers;
 }
 
-bool Request::parse(const std::string &data) {
+bool Request::parse(const std::string &data)
+{
     std::istringstream stream(data);
     std::string line;
-    
+
     // 요청 라인 파싱
     if (!getline(stream, line))
         return false;
     if (!parseRequestLine(line))
         return false;
-    
+
     // 헤더 파싱
-    while (getline(stream, line) && line != "\r") {
+    while (getline(stream, line) && line != "\r")
+    {
         if (!parseHeaderLine(line))
             return false;
     }
-    
+
     // 바디 파싱
-    if (headers.find("Content-Length") != headers.end()) {
+    if (headers.find("Content-Length") != headers.end())
+    {
         int content_length = atoi(headers["Content-Length"].c_str());
         body.resize(content_length);
         stream.read(&body[0], content_length);
     }
-    
+
     return true;
 }
 
-bool Request::parseRequestLine(const std::string &line) {
+bool Request::parseRequestLine(const std::string &line)
+{
     std::istringstream iss(line);
     if (!(iss >> method >> path))
         return false;
@@ -53,7 +65,8 @@ bool Request::parseRequestLine(const std::string &line) {
     return true;
 }
 
-bool Request::parseHeaderLine(const std::string &line) {
+bool Request::parseHeaderLine(const std::string &line)
+{
     size_t pos = line.find(":");
     if (pos == std::string::npos)
         return false;

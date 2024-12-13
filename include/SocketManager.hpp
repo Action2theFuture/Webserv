@@ -3,8 +3,9 @@
 
 #include <string>
 
-class SocketManager {
-public:
+class SocketManager
+{
+  public:
     static int createSocket(int port);
     static void setSocketOptions(int sockfd, int port);
     static void setSocketNonBlocking(int sockfd, int port);

@@ -4,25 +4,27 @@
 #include "Request.hpp"
 #include "ServerConfig.hpp"
 
-#include <fstream>
-#include <sstream>
 #include <cstring>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <fstream>
 #include <limits.h>
-#include <string>
 #include <map>
+#include <sstream>
+#include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#define ROOT_DIRECTORY "./www"
+#define ROOT_DIRECTORY "./www/html"
 
-class Response {
-public:
+class Response
+{
+  public:
     Response();
     ~Response();
 
     // 정적 메서드로 응답 생성
-    static Response createResponse(const Request &request, const LocationConfig &location_config, const ServerConfig &server_config);
+    static Response createResponse(const Request &request, const LocationConfig &location_config,
+                                   const ServerConfig &server_config);
 
     // 응답을 문자열로 변환
     std::string toString() const;
@@ -32,10 +34,26 @@ public:
     void setHeader(const std::string &key, const std::string &value);
     void setBody(const std::string &content);
 
-private:
+  private:
     std::string status;
     std::map<std::string, std::string> headers;
     std::string body;
 };
+
+namespace ResponseHelpers
+{
+// createErrorResponse: 에러 응답 생성 (긴 함수, 내부적으로 서브함수 나눌 수도
+// 있음)
+Response createErrorResponse(int status, const ServerConfig &server_config);
+// 메서드 허용 검사
+bool isMethodAllowed(const std::string &method, const LocationConfig &location_config);
+// 리디렉션 처리
+Response handleRedirection(const LocationConfig &location_config);
+// CGI 처리
+Response handleCGI(const Request &request, const std::string &real_path, const ServerConfig &server_config);
+// 정적 파일 처리
+Response handleStaticFile(const std::string &real_path, const ServerConfig &server_config);
+
+} // namespace ResponseHelpers
 
 #endif // RESPONSE_HPP

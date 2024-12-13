@@ -1,19 +1,20 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <set>
 #include "Poller.hpp"
+#include "RequestHandler.hpp"
 #include "Response.hpp"
 #include "ServerConfig.hpp"
 #include "SocketManager.hpp"
-#include "RequestHandler.hpp"
 #include "Utils.hpp"
+#include <iostream>
+#include <set>
+#include <string>
+#include <vector>
 
-class Server {
-public:
+class Server
+{
+  public:
     // 생성자 및 소멸자
     Server(const std::string &configFile);
     ~Server();
@@ -21,7 +22,7 @@ public:
     // 서버 실행
     void start();
 
-private:
+  private:
     std::vector<ServerConfig> server_configs; // 서버 구성 리스트
     Poller *poller;                           // Poller 인터페이스 포인터
 
