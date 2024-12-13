@@ -1,4 +1,5 @@
 #include "Utils.hpp"
+#include "Define.hpp"
 
 std::string getMimeType(const std::string &path)
 {

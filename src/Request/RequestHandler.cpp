@@ -1,5 +1,6 @@
 #include "RequestHandler.hpp"
 #include "CGIHandler.hpp"
+#include "Define.hpp"
 #include "Utils.hpp"
 
 void RequestHandler::sendResponse(int client_fd, const Response &response)
@@ -25,7 +26,7 @@ void RequestHandler::sendResponse(int client_fd, const Response &response)
 void RequestHandler::sendBadRequestResponse(int client_fd, const ServerConfig &server_config)
 {
     Response res;
-    res.setStatus("400 Bad Request");
+    res.setStatus(BAD_REQUEST_404);
     // 에러 페이지가 설정되어 있는지 확인
     std::string error_body = "<h1>400 Bad Request</h1>"; // 기본 에러 메시지
     if (server_config.error_pages.find(400) != server_config.error_pages.end())
@@ -79,6 +80,6 @@ Response RequestHandler::generateResponse(const Request &request, const ServerCo
     default_location.path = "/";
     default_location.methods.push_back("GET");
     default_location.directory_listing = false;
-    default_location.index = "./www/html/index.html";
+    default_location.index = DEFAULT_INDEX_PATH;
     return Response::createResponse(request, default_location, server_config);
 }

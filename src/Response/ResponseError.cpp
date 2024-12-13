@@ -1,4 +1,6 @@
+#include "Define.hpp"
 #include "Response.hpp"
+#include "Utils.hpp"
 #include <fcntl.h>
 #include <sstream>
 #include <unistd.h>
@@ -11,6 +13,7 @@ static std::string readErrorPageFromFile(const std::string &file_path, int statu
         // 파일 열기 실패
         std::stringstream ss;
         ss << "Error " << status << " (Failed to open file: " << file_path << ")";
+        logError("(Failed to open file" + file_path + ": " + strerror(errno));
         return ss.str(); // 에러 메시지 반환
     }
 
@@ -27,6 +30,7 @@ static std::string readErrorPageFromFile(const std::string &file_path, int statu
     {
         std::stringstream ss;
         ss << "Error " << status << " (Failed to read file: " << file_path << ")";
+        logError("(Failed to read file" + file_path + ": " + strerror(errno));
         return ss.str();
     }
 
@@ -39,12 +43,14 @@ Response createErrorResponse(const int status, const ServerConfig &server_config
 {
     Response res;
     std::string status_text;
-    if (status == 404)
-        status_text = "404 Not Found";
+    if (status == 400)
+        status_text = NOT_FOUND_400;
+    else if (status == 404)
+        status_text = BAD_REQUEST_404;
     else if (status == 405)
-        status_text = "405 Method Not Allowed";
+        status_text = METHOD_NOT_ALLOWED_405;
     else if (status == 500)
-        status_text = "500 Internal Server Error";
+        status_text = INTERNAL_SERVER_ERROR_500;
     else
     {
         std::stringstream ss;
@@ -60,6 +66,7 @@ Response createErrorResponse(const int status, const ServerConfig &server_config
         // 키가 없음 -> 기본 메시지
         std::stringstream ss;
         ss << "Error " << status << " (No error page found in server_config)";
+        logError("(No error page found in server_config) / status : " + intToString(status) + ": " + strerror(errno));
         std::string default_error = ss.str();
         res.setBody(default_error);
 
@@ -79,6 +86,7 @@ Response createErrorResponse(const int status, const ServerConfig &server_config
         ss_len << file_content.size();
         res.setHeader("Content-Length", ss_len.str());
     }
+    logError(status_text + ": " + strerror(errno));
     return res;
 }
 

@@ -11,8 +11,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define LOG_FILE "./logs/error.log"
-
 std::string getMimeType(const std::string &path);
 std::string normalizePath(const std::string &path);
 std::string trim(const std::string &str);

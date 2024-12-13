@@ -8,90 +8,6 @@
 // 공백 및 주석 제거 함수 (Utils.cpp에 구현)
 extern std::string trim(const std::string &str);
 
-bool Configuration::parseConfigFile(const std::string &filename)
-{
-    std::ifstream file(filename.c_str());
-    if (!file.is_open())
-    {
-        std::cerr << "Failed to open config file: " << filename << std::endl;
-        return false;
-    }
-
-    std::string line;
-    ServerConfig current_server;
-    LocationConfig current_location;
-    bool in_server_block = false;
-    bool in_location_block = false;
-
-    while (getline(file, line))
-    {
-        // 공백 및 주석 제거
-        line = trim(line);
-        if (line.empty() || line[0] == '#')
-            continue;
-
-        // 세미콜론으로 끝나는 라인 처리
-        if (line.back() == ';')
-        {
-            line.erase(line.size() - 1); // 세미콜론 제거
-        }
-
-        if (line.find("server {") != std::string::npos)
-        {
-            in_server_block = true;
-            current_server = initializeServerConfig();
-            continue;
-        }
-
-        if (in_server_block)
-        {
-            if (line.find("}") != std::string::npos)
-            {
-                if (in_location_block)
-                {
-                    // 위치 블록 종료
-                    current_server.locations.push_back(current_location);
-                    in_location_block = false;
-                }
-                else
-                {
-                    // 서버 블록 종료
-                    servers.push_back(current_server);
-                    in_server_block = false;
-                }
-                continue;
-            }
-
-            if (line.find("location") == 0 && line.find("{") != std::string::npos)
-            {
-                in_location_block = true;
-                current_location = initializeLocationConfig(line);
-                continue;
-            }
-
-            if (in_location_block)
-            {
-                if (line.find("}") != std::string::npos)
-                {
-                    // 위치 블록 종료
-                    current_server.locations.push_back(current_location);
-                    in_location_block = false;
-                    continue;
-                }
-                parseLocationConfig(line, current_location);
-            }
-            else
-            {
-                // 서버 블록 내 설정 파싱
-                parseServerConfig(line, current_server);
-            }
-        }
-    }
-
-    file.close();
-    return true;
-}
-
 ServerConfig Configuration::initializeServerConfig()
 {
     ServerConfig server;
@@ -207,4 +123,88 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
         server_config.client_max_body_size = size;
     }
     // 추가적인 서버 설정 항목 파싱
+}
+
+bool Configuration::parseConfigFile(const std::string &filename)
+{
+    std::ifstream file(filename.c_str());
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open config file: " << filename << std::endl;
+        return false;
+    }
+
+    std::string line;
+    ServerConfig current_server;
+    LocationConfig current_location;
+    bool in_server_block = false;
+    bool in_location_block = false;
+
+    while (getline(file, line))
+    {
+        // 공백 및 주석 제거
+        line = trim(line);
+        if (line.empty() || line[0] == '#')
+            continue;
+
+        // 세미콜론으로 끝나는 라인 처리
+        if (line.back() == ';')
+        {
+            line.erase(line.size() - 1); // 세미콜론 제거
+        }
+
+        if (line.find("server {") != std::string::npos)
+        {
+            in_server_block = true;
+            current_server = initializeServerConfig();
+            continue;
+        }
+
+        if (in_server_block)
+        {
+            if (line.find("}") != std::string::npos)
+            {
+                if (in_location_block)
+                {
+                    // 위치 블록 종료
+                    current_server.locations.push_back(current_location);
+                    in_location_block = false;
+                }
+                else
+                {
+                    // 서버 블록 종료
+                    servers.push_back(current_server);
+                    in_server_block = false;
+                }
+                continue;
+            }
+
+            if (line.find("location") == 0 && line.find("{") != std::string::npos)
+            {
+                in_location_block = true;
+                current_location = initializeLocationConfig(line);
+                continue;
+            }
+
+            if (in_location_block)
+            {
+                if (line.find("}") != std::string::npos)
+                {
+                    // 위치 블록 종료
+                    current_server.locations.push_back(current_location);
+                    in_location_block = false;
+                    continue;
+                }
+                parseLocationConfig(line, current_location);
+            }
+            else
+            {
+                // 서버 블록 내 설정 파싱
+                parseServerConfig(line, current_server);
+            }
+        }
+    }
+
+    file.close();
+    return true;
 }

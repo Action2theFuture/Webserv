@@ -10,23 +10,30 @@ IFLAGS = -I ./include/
 
 SRC_DIR = src
 OBJ_DIR = obj
+SERVER_DIR = $(SRC_DIR)/Server
+REQUEST_DIR = $(SRC_DIR)/Request
 RESPONSE_DIR = $(SRC_DIR)/Response
+POLLER_DIR = $(SRC_DIR)/Poller
 
-SRC = main.cpp Server.cpp Request.cpp Utils.cpp \
-	CGIHandler.cpp Configuration.cpp SocketManager.cpp RequestHandler.cpp
-RESPONSE = Response.cpp ResponseError.cpp ResponseHandler.cpp
+SRC = main.cpp Utils.cpp Parser.cpp Configuration.cpp
+SERVER = Server.cpp SocketManager.cpp
+REQUEST = Request.cpp RequestHandler.cpp
+RESPONSE = Response.cpp ResponseError.cpp ResponseHandler.cpp \
+		CGIHandler.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRC))
+SRCS += $(addprefix $(SERVER_DIR)/, $(SERVER))
+SRCS += $(addprefix $(REQUEST_DIR)/, $(REQUEST))
 SRCS += $(addprefix $(RESPONSE_DIR)/, $(RESPONSE))
 
 vpath %.cpp ./src/
 
 ifeq ($(UNAME_S), Linux)
     CFLAGS += -D__linux__
-	SRCS += $(addprefix $(SRC_DIR)/, EpollPoller.cpp)
+	SRCS += $(addprefix $(POLLER_DIR)/, EpollPoller.cpp)
 else ifeq ($(UNAME_S), Darwin)
     CFLAGS += -D__APPLE__
-	SRCS += $(addprefix $(SRC_DIR)/, KqueuePoller.cpp)
+	SRCS += $(addprefix $(POLLER_DIR)/, KqueuePoller.cpp)
 endif
 
 OBJS := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRCS))
