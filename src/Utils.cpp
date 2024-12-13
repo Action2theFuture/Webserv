@@ -101,3 +101,10 @@ std::string trim(const std::string &str) {
     size_t last = str.find_last_not_of(" \t\r\n");
     return str.substr(first, (last - first + 1));
 }
+
+// C++98 호환을 위한 int to string 변환 함수 정의
+std::string intToString(int number) {
+    std::stringstream ss;
+    ss << number;
+    return ss.str();
+}

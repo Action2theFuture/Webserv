@@ -1,54 +1,53 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include <iostream>
 #include <string>
 #include <vector>
-#include <map>
+#include <set>
 #include "Poller.hpp"
-#include "Response.hpp" // Response 헤더 포함
-#include "ServerConfig.hpp" // 서버 구성 구조체 포함
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstring>
-#include <fcntl.h>
-#include <algorithm>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <vector>
-#include <map>
-#include <set> 
+#include "Response.hpp"
+#include "ServerConfig.hpp"
+#include "SocketManager.hpp"
+#include "RequestHandler.hpp"
+#include "Utils.hpp"
 
 class Server {
 public:
-    // 생성자: configFile만 인자로 받음
+    // 생성자 및 소멸자
     Server(const std::string &configFile);
     ~Server();
 
+    // 서버 실행
     void start();
 
 private:
     std::vector<ServerConfig> server_configs; // 서버 구성 리스트
-    Poller *poller; // Poller 인터페이스 포인터
+    Poller *poller;                           // Poller 인터페이스 포인터
 
     // 소켓 초기화
     void initSockets();
 
+    // Poller 이벤트 처리
+    bool processPollerEvents(std::vector<Event> &events);
+    void processEvents(const std::vector<Event> &events);
+
+    // 새 연결 처리
+    void handleNewConnection(int server_fd);
+
     // 클라이언트 요청 처리
     void handleClientRead(int client_fd, const ServerConfig &server_config);
     void handleClientWrite(int client_fd);
-
-    // 응답 전송
-    void sendResponse(int client_fd, const Response &response);
-
-    // 안전한 클라이언트 소켓 닫기
     void safelyCloseClient(int client_fd);
 
-    // C++98 호환을 위한 int to string 변환 함수 선언
-    std::string intToString(int number) const;
+    // 비차단 모드 설정
+    bool setNonBlocking(int fd);
+
+    // 파일 디스크립터가 서버 소켓인지 확인
+    bool isServerSocket(int fd, ServerConfig **matched_server) const;
+
+    // 파일 디스크립터에 해당하는 서버 구성 찾기
+    ServerConfig &findMatchingServerConfig(int fd);
 };
 
 #endif // SERVER_HPP
