@@ -32,5 +32,6 @@
 *.app
 
 .vscode
+.clang-format
 
 logs

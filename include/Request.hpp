@@ -1,24 +1,25 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
-#include <string>
 #include <map>
 #include <sstream>
+#include <string>
 
-class Request {
-public:
+class Request
+{
+  public:
     Request();
     ~Request();
-    
+
     bool parse(const std::string &data);
-    
+
     std::string getMethod() const;
     std::string getPath() const;
     std::string getQueryString() const;
     std::map<std::string, std::string> getHeaders() const;
     std::string getBody() const;
 
-private:
+  private:
     std::string method;
     std::string path;
     std::string query_string;

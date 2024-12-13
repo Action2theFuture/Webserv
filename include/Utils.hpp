@@ -2,16 +2,14 @@
 #define UTILS_HPP
 
 #include <algorithm>
-#include <limits.h>
-#include <stdlib.h>
 #include <fstream>
 #include <iostream>
+#include <limits.h>
+#include <sstream>
+#include <stdlib.h>
 #include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sstream>
-
-#define LOG_FILE "./logs/error.log"
 
 std::string getMimeType(const std::string &path);
 std::string normalizePath(const std::string &path);

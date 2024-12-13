@@ -7,18 +7,18 @@
 #include <sys/event.h>
 #include <sys/time.h>
 
-
-class KqueuePoller : public Poller {
-public:
+class KqueuePoller : public Poller
+{
+  public:
     KqueuePoller();
     ~KqueuePoller();
-    
+
     bool add(int fd, uint32_t events);
     bool modify(int fd, uint32_t events);
     bool remove(int fd);
     int poll(std::vector<Event> &events_out, int timeout = -1);
 
-private:
+  private:
     int kqueue_fd;
     static const int MAX_EVENTS = 1000;
     struct kevent changes[MAX_EVENTS];
