@@ -64,7 +64,7 @@ const LocationConfig *RequestHandler::matchLocationConfig(const Request &request
             return &server_config.locations[loc];
         }
     }
-    return nullptr;
+    return NULL;
 }
 
 Response RequestHandler::generateResponse(const Request &request, const ServerConfig &server_config,
