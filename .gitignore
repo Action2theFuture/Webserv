@@ -33,5 +33,6 @@
 
 .vscode
 .clang-format
+.DS_Store
 
 logs
