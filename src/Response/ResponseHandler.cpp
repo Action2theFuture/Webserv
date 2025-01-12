@@ -58,9 +58,10 @@ Response handleCGI(const Request &request, const std::string &real_path, const S
         std::string header_line;
         while (std::getline(header_stream, header_line))
         {
-            if (!header_line.empty() && header_line.back() == '\r')
+            if (!header_line.empty() && \
+                !header_line.empty() && header_line[header_line.size() - 1] == '\r')
             {
-                header_line.pop_back();
+                header_line.resize(header_line.size() - 1);
             }
             size_t colon = header_line.find(':');
             if (colon != std::string::npos)

@@ -4,11 +4,14 @@
 #ifdef __linux__
 
 #include "Poller.hpp"
+#include "Define.hpp"
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <cerrno>
+#include <cstdio> 
 
 class EpollPoller : public Poller
 {

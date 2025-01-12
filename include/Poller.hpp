@@ -1,7 +1,7 @@
 #ifndef POLLER_HPP
 #define POLLER_HPP
 
-#include <cstdint>
+#include <stdint.h>
 #include <vector>
 
 // Poller 추상화 클래스에서 사용할 자체 이벤트 플래그 정의

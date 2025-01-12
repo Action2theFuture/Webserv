@@ -148,7 +148,7 @@ bool Configuration::parseConfigFile(const std::string &filename)
             continue;
 
         // 세미콜론으로 끝나는 라인 처리
-        if (line.back() == ';')
+        if (!line.empty() && line[line.size() - 1] == ';')
         {
             line.erase(line.size() - 1); // 세미콜론 제거
         }
