@@ -3,9 +3,14 @@
 
 #ifdef __APPLE__
 
+#include "Define.hpp"
 #include "Poller.hpp"
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include <sys/event.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 class KqueuePoller : public Poller
 {
@@ -20,7 +25,6 @@ class KqueuePoller : public Poller
 
   private:
     int kqueue_fd;
-    static const int MAX_EVENTS = 1000;
     struct kevent changes[MAX_EVENTS];
     struct kevent events[MAX_EVENTS];
     int changelist_count;

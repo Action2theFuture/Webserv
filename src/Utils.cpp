@@ -1,5 +1,4 @@
 #include "Utils.hpp"
-#include "Define.hpp"
 
 std::string getMimeType(const std::string &path)
 {
@@ -63,60 +62,6 @@ std::string normalizePath(const std::string &path)
     return normalized;
 }
 
-void ensureLogDirectoryExists()
-{
-    const char *logDir = "./logs";
-    struct stat st;
-    if (stat(logDir, &st) == -1)
-    {
-        if (mkdir(logDir, 0755) == -1)
-        {
-            std::cerr << "Error: Failed to create log directory " << logDir << ": " << strerror(errno) << std::endl;
-        }
-        else
-        {
-            std::cerr << "Log directory created: " << logDir << std::endl;
-        }
-    }
-}
-
-void logError(const std::string &message)
-{
-    ensureLogDirectoryExists();
-    // 로그 파일 열기
-    std::ofstream log_file(LOG_FILE, std::ios::app);
-
-    // 로그 파일 열기에 실패한 경우 파일 생성 시도
-    if (!log_file.is_open())
-    {
-        // 파일 생성 시도
-        std::ofstream create_file(LOG_FILE);
-        if (!create_file.is_open())
-        {
-            std::cerr << "Error: Failed to create log file " << LOG_FILE << std::endl;
-            // 표준 에러로만 출력
-            std::cerr << message << std::endl;
-            return;
-        }
-        create_file.close();
-        log_file.open(LOG_FILE, std::ios::app);
-        if (!log_file.is_open())
-        {
-            std::cerr << "Error: Failed to open newly created log file " << LOG_FILE << std::endl;
-            // 표준 에러로만 출력
-            std::cerr << message << std::endl;
-            return;
-        }
-    }
-
-    // 로그 파일에 기록
-    log_file << message << std::endl;
-    log_file.close();
-
-    // 표준 에러에도 출력
-    std::cerr << message << std::endl;
-}
-
 std::string trim(const std::string &str)
 {
     size_t first = str.find_first_not_of(" \t\r\n");
@@ -132,4 +77,71 @@ std::string intToString(int number)
     std::stringstream ss;
     ss << number;
     return ss.str();
+}
+
+// 파일 이름 정제를 위한 함수 객체(디렉토리 트래버셜 방지)
+struct IsNotAllowedChar
+{
+    bool operator()(char c) const
+    {
+        return !(isalnum(c) || c == '.' || c == '_');
+    }
+};
+
+std::string sanitizeFilename(const std::string &filename)
+{
+    std::string sanitized = filename;
+    // 경로 구분자 제거
+    sanitized.erase(std::remove(sanitized.begin(), sanitized.end(), '/'), sanitized.end());
+    sanitized.erase(std::remove(sanitized.begin(), sanitized.end(), '\\'), sanitized.end());
+
+    // 알파벳, 숫자, 점, 밑줄만 남김
+    sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), IsNotAllowedChar()), sanitized.end());
+
+    return sanitized;
+}
+
+// 허용된 파일 확장자 확인
+bool isAllowedExtension(const std::string &filename, const std::vector<std::string> &allowed_extensions)
+{
+    size_t dot = filename.find_last_of('.');
+    if (dot == std::string::npos)
+    {
+        return false; // 확장자가 없음
+    }
+    std::string ext = filename.substr(dot);
+    return std::find(allowed_extensions.begin(), allowed_extensions.end(), ext) != allowed_extensions.end();
+}
+
+bool iequals(const std::string &a, const std::string &b)
+{
+    if (a.size() != b.size())
+        return false;
+    for (size_t i = 0; i < a.size(); ++i)
+    {
+        if (tolower(a[i]) != tolower(b[i]))
+            return false;
+    }
+    return true;
+}
+
+std::string toLower(const std::string &str)
+{
+    std::string lower_str = str;
+    std::transform(lower_str.begin(), lower_str.end(), lower_str.begin(), ::tolower);
+    return lower_str;
+}
+
+void trimString(std::string &str)
+{
+    // 앞뒤 공백 제거 (C++98 호환)
+    static const char *whitespaces = " \t\r\n";
+    std::string::size_type start = str.find_first_not_of(whitespaces);
+    if (start == std::string::npos)
+    {
+        str.clear();
+        return;
+    }
+    std::string::size_type end = str.find_last_not_of(whitespaces);
+    str = str.substr(start, end - start + 1);
 }
