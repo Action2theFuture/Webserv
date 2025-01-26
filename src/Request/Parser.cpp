@@ -1,9 +1,9 @@
 #include "Parser.hpp"
 
 bool Parser::parse(const std::string &data, std::string &method, std::string &path, std::string &query_string,
-                   std::map<std::string, std::string> &headers, std::string &body,
-                   std::vector<UploadedFile> &uploaded_files, std::map<std::string, std::string> &form_fields,
-                   int &consumed, bool &isPartial)
+                   std::map<std::string, std::string> &queryParams, std::map<std::string, std::string> &headers,
+                   std::string &body, std::vector<UploadedFile> &uploaded_files,
+                   std::map<std::string, std::string> &form_fields, int &consumed, bool &isPartial)
 {
     consumed = 0;
     isPartial = false;
@@ -18,7 +18,7 @@ bool Parser::parse(const std::string &data, std::string &method, std::string &pa
 
     // 요청 라인 추출
     std::string request_line = data.substr(0, line_end);
-    if (!parseRequestLine(request_line, method, path, query_string))
+    if (!parseRequestLine(request_line, method, path, query_string, queryParams))
     {
         // 문법 오류
         return false;
@@ -99,7 +99,7 @@ bool Parser::parse(const std::string &data, std::string &method, std::string &pa
 }
 
 bool Parser::parseRequestLine(const std::string &line, std::string &method, std::string &path,
-                              std::string &query_string)
+                              std::string &query_string, std::map<std::string, std::string> &queryParams)
 {
     // 예: "GET /upload?foo=bar HTTP/1.1"
     // 간단히 split 2~3개만 파싱
@@ -123,11 +123,32 @@ bool Parser::parseRequestLine(const std::string &line, std::string &method, std:
     {
         query_string = url.substr(qmark + 1);
         path = url.substr(0, qmark);
+
+        // 쿼리 스트링 파싱하여 키-값 쌍의 맵 생성
+        std::stringstream ss(query_string);
+        std::string pair;
+
+        while (std::getline(ss, pair, '&'))
+        {
+            size_t eq_pos = pair.find('=');
+            if (eq_pos != std::string::npos)
+            {
+                std::string key = urlDecode(pair.substr(0, eq_pos));
+                std::string value = urlDecode(pair.substr(eq_pos + 1));
+                queryParams[key] = value;
+            }
+            else
+            {
+                // '='가 없는 경우, 키만 존재
+                std::string key = urlDecode(pair);
+                queryParams[key] = "";
+            }
+        }
     }
     else
     {
-        query_string.clear();
         path = url;
+        query_string.clear();
     }
 
     // (HTTP 버전 등은 secondSpace 뒤로 존재 가능)

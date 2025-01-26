@@ -11,7 +11,6 @@
 #endif
 
 #include "Poller.hpp"
-#include "RequestHandler.hpp"
 #include "Response.hpp"
 #include "ServerConfig.hpp"
 #include "SocketManager.hpp"
@@ -63,6 +62,11 @@ class Server
 
     // 파일 디스크립터에 해당하는 서버 구성 찾기
     ServerConfig &findMatchingServerConfig(int fd);
+
+    bool processClientRequest(int client_fd, const ServerConfig &server_config, const std::string &request_str,
+                              int &consumed);
+    void sendBadRequestResponse(int client_fd, const ServerConfig &server_config);
+    void sendResponse(int client_fd, const Response &response);
 };
 
 #endif // SERVER_HPP

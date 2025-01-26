@@ -2,22 +2,25 @@
 #define RESPONSE_HPP
 
 #include "CGIHandler.hpp" // For cgi_handler.execute if needed
-#include "CGIHandler.hpp"
 #include "Configuration.hpp"
 #include "Define.hpp"
 #include "Log.hpp"
 #include "Request.hpp"
+#include "ResponseUtils.hpp"
 #include "ServerConfig.hpp"
 #include "Utils.hpp" // trim, normalizePath, etc.>
-#include "Utils.hpp"
+
 #include <cerrno>
 #include <cstring>
+#include <dirent.h>
 #include <fcntl.h>
 #include <fstream>
+#include <iostream>
 #include <limits.h>
 #include <map>
 #include <sstream>
 #include <string>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -30,6 +33,11 @@ class Response
     // 정적 메서드로 응답 생성
     static Response createResponse(const Request &request, const LocationConfig &location_config,
                                    const ServerConfig &server_config);
+    static Response generateResponse(const Request &request, const ServerConfig &server_config,
+                                     const LocationConfig *location_config);
+    // createErrorResponse: 에러 응답 생성 (긴 함수, 내부적으로 서브함수 나눌 수도
+    // 있음)
+    static Response createErrorResponse(int status, const ServerConfig &server_config);
 
     // 응답을 문자열로 변환
     std::string toString() const;
@@ -45,31 +53,7 @@ class Response
     std::string status;
     std::map<std::string, std::string> headers;
     std::string body;
+    static std::string readErrorPageFromFile(const std::string &file_path, int status);
 };
-
-namespace ResponseHelpers
-{
-// createErrorResponse: 에러 응답 생성 (긴 함수, 내부적으로 서브함수 나눌 수도
-// 있음)
-Response createErrorResponse(int status, const ServerConfig &server_config);
-// 메서드 허용 검사
-bool isMethodAllowed(const std::string &method, const LocationConfig &location_config);
-// 리디렉션 처리
-Response handleRedirection(const LocationConfig &location_config);
-// CGI 처리
-Response handleCGI(const Request &request, const std::string &real_path, const ServerConfig &server_config);
-// 정적 파일 처리
-Response handleStaticFile(const std::string &real_path, const ServerConfig &server_config);
-// 파일 업로드 처리
-Response handleUpload(const std::string &real_path, const Request &request, const LocationConfig &location_config,
-                      const ServerConfig &server_config);
-
-std::string buildRequestedPath(const std::string &path, const LocationConfig &location_config,
-                               const ServerConfig &server_config);
-// 업로드 디렉토리 생성
-bool ensureDirectoryExists(const std::string &fullPath);
-bool createSingleDir(const std::string &path);
-
-} // namespace ResponseHelpers
 
 #endif // RESPONSE_HPP

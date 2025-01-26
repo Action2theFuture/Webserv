@@ -32,6 +32,11 @@ std::string Request::getQueryString() const
     return query_string;
 }
 
+std::map<std::string, std::string> Request::getQueryParams() const
+{
+    return queryParams;
+}
+
 std::map<std::string, std::string> Request::getHeaders() const
 {
     return headers;
@@ -45,6 +50,6 @@ std::string Request::getBody() const
 bool Request::parse(const std::string &data, int &consumed, bool &isPartial)
 {
     Parser parser;
-    return parser.parse(data, method, path, query_string, headers, body, uploaded_files, form_fields, consumed,
-                        isPartial);
+    return parser.parse(data, method, path, query_string, queryParams, headers, body, uploaded_files, form_fields,
+                        consumed, isPartial);
 }

@@ -19,12 +19,13 @@ class Parser
     }
 
     bool parse(const std::string &data, std::string &method, std::string &path, std::string &query_string,
-               std::map<std::string, std::string> &headers, std::string &body,
-               std::vector<UploadedFile> &uploaded_files, std::map<std::string, std::string> &form_fields,
-               int &consumed, bool &isPartial);
+               std::map<std::string, std::string> &queryParams, std::map<std::string, std::string> &headers,
+               std::string &body, std::vector<UploadedFile> &uploaded_files,
+               std::map<std::string, std::string> &form_fields, int &consumed, bool &isPartial);
 
   private:
-    bool parseRequestLine(const std::string &line, std::string &method, std::string &path, std::string &query_string);
+    bool parseRequestLine(const std::string &line, std::string &method, std::string &path, std::string &query_string,
+                          std::map<std::string, std::string> &queryParams);
     bool parseHeaderLine(const std::string &line, std::map<std::string, std::string> &headers);
     // 파일 업로드 파싱 메서드
     bool parseMultipartFormData(const std::string &body, const std::string &boundary,

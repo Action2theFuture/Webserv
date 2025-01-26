@@ -101,6 +101,17 @@ std::string sanitizeFilename(const std::string &filename)
     return sanitized;
 }
 
+bool isValidFilename(const std::string &filename)
+{
+    // 파일 이름에 디렉토리 트래버설 문자가 없는지 확인
+    if (filename.find("..") != std::string::npos || filename.find('/') != std::string::npos ||
+        filename.find('\\') != std::string::npos)
+    {
+        return false;
+    }
+    return true;
+}
+
 // 허용된 파일 확장자 확인
 bool isAllowedExtension(const std::string &filename, const std::vector<std::string> &allowed_extensions)
 {
@@ -144,4 +155,31 @@ void trimString(std::string &str)
     }
     std::string::size_type end = str.find_last_not_of(whitespaces);
     str = str.substr(start, end - start + 1);
+}
+
+// URL 디코딩 함수
+std::string urlDecode(const std::string &SRC)
+{
+    std::string ret;
+    char ch;
+    int ii;
+    for (size_t i = 0; i < SRC.length(); i++)
+    {
+        if (int(SRC[i]) == 37)
+        { // '%'
+            sscanf(SRC.substr(i + 1, 2).c_str(), "%x", &ii);
+            ch = static_cast<char>(ii);
+            ret += ch;
+            i = i + 2;
+        }
+        else if (SRC[i] == '+')
+        {
+            ret += ' ';
+        }
+        else
+        {
+            ret += SRC[i];
+        }
+    }
+    return ret;
 }
