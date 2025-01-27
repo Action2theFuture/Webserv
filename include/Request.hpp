@@ -1,6 +1,7 @@
 #ifndef REQUEST_HPP
 #define REQUEST_HPP
 
+#include "Parser.hpp"
 #include <map>
 #include <sstream>
 #include <string>
@@ -11,7 +12,10 @@ class Request
     Request();
     ~Request();
 
-    bool parse(const std::string &data);
+    bool parse(const std::string &data, int &consumed, bool &isPartial);
+
+    const std::vector<UploadedFile> &getUploadedFiles() const;
+    const std::map<std::string, std::string> &getFormFields() const;
 
     std::string getMethod() const;
     std::string getPath() const;
@@ -19,11 +23,17 @@ class Request
     std::map<std::string, std::string> getHeaders() const;
     std::string getBody() const;
 
+    void setUploadedFiles(const std::vector<UploadedFile> &files);
+    void setFormFields(const std::map<std::string, std::string> &fields);
+    void setBody(const std::string &body_data);
+
   private:
     std::string method;
     std::string path;
     std::string query_string;
     std::map<std::string, std::string> headers;
+    std::vector<UploadedFile> uploaded_files;
+    std::map<std::string, std::string> form_fields;
     std::string body;
 
     bool parseRequestLine(const std::string &line);

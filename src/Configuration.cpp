@@ -1,18 +1,48 @@
 // Configuration.cpp
 #include "Configuration.hpp"
-#include "Utils.hpp"
-#include <fstream>
-#include <iostream>
-#include <sstream>
 
 // 공백 및 주석 제거 함수 (Utils.cpp에 구현)
 extern std::string trim(const std::string &str);
+
+static const std::string default_allowed_extensions_array[] = {".jpg", ".jpeg", ".png", ".gif", ".txt", ".pdf"};
+
+const std::vector<std::string> DEFAULT_ALLOWED_EXTENSIONS(default_allowed_extensions_array,
+                                                          default_allowed_extensions_array +
+                                                              sizeof(default_allowed_extensions_array) /
+                                                                  sizeof(default_allowed_extensions_array[0]));
+
+void Configuration::printConfiguration() const
+{
+    LogConfig::printAllConfigurations(servers);
+}
 
 ServerConfig Configuration::initializeServerConfig()
 {
     ServerConfig server;
     server.client_max_body_size = 1048576; // 기본값 1MB
     return server;
+}
+
+// 가장 긴 경로를 가진 위치 블록을 검사
+const LocationConfig *findBestMatchingLocation(const std::string &path, const ServerConfig &server_config)
+{
+    const LocationConfig *best_match = nullptr;
+    size_t max_length = 0;
+
+    for (size_t i = 0; i < server_config.locations.size(); ++i)
+    {
+        const LocationConfig &location = server_config.locations[i];
+        if (path.find(location.path) == 0)
+        {
+            if (location.path.length() > max_length)
+            {
+                max_length = location.path.length();
+                best_match = &server_config.locations[i];
+            }
+        }
+    }
+
+    return best_match;
 }
 
 LocationConfig Configuration::initializeLocationConfig(const std::string &line)
@@ -28,6 +58,8 @@ LocationConfig Configuration::initializeLocationConfig(const std::string &line)
     {
         location.path = "/";
     }
+
+    location.allowed_extensions = DEFAULT_ALLOWED_EXTENSIONS;
     return location;
 }
 
@@ -45,6 +77,10 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
         {
             location_config.methods.push_back(method);
         }
+    }
+    else if (key == "root")
+    {
+        iss >> location_config.root;
     }
     else if (key == "redirect")
     {
@@ -67,6 +103,20 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     else if (key == "cgi_path")
     {
         iss >> location_config.cgi_path;
+    }
+    // 업로드 관련 설정 파싱
+    else if (key == "upload_directory")
+    {
+        iss >> location_config.upload_directory;
+    }
+    else if (key == "allowed_extensions")
+    {
+        std::string extension;
+        location_config.allowed_extensions.clear();
+        while (iss >> extension)
+        {
+            location_config.allowed_extensions.push_back(extension);
+        }
     }
     // 추가적인 위치 설정 항목 파싱
 }
@@ -127,6 +177,7 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
 
 bool Configuration::parseConfigFile(const std::string &filename)
 {
+    std::cerr << "[DEBUG] parseConfigFile: " << filename << std::endl;
     std::ifstream file(filename.c_str());
     if (!file.is_open())
     {
@@ -206,5 +257,6 @@ bool Configuration::parseConfigFile(const std::string &filename)
     }
 
     file.close();
+    printConfiguration();
     return true;
 }

@@ -1,9 +1,16 @@
 #ifndef RESPONSE_HPP
 #define RESPONSE_HPP
 
+#include "CGIHandler.hpp" // For cgi_handler.execute if needed
+#include "CGIHandler.hpp"
+#include "Configuration.hpp"
+#include "Define.hpp"
+#include "Log.hpp"
 #include "Request.hpp"
 #include "ServerConfig.hpp"
-
+#include "Utils.hpp" // trim, normalizePath, etc.>
+#include "Utils.hpp"
+#include <cerrno>
 #include <cstring>
 #include <fcntl.h>
 #include <fstream>
@@ -13,8 +20,6 @@
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#define ROOT_DIRECTORY "./www/html"
 
 class Response
 {
@@ -33,6 +38,8 @@ class Response
     void setStatus(const std::string &status_code);
     void setHeader(const std::string &key, const std::string &value);
     void setBody(const std::string &content);
+
+    void setCookie(const std::string &key, const std::string &value, const std::string &path = "/", int max_age = 0);
 
   private:
     std::string status;
@@ -53,6 +60,15 @@ Response handleRedirection(const LocationConfig &location_config);
 Response handleCGI(const Request &request, const std::string &real_path, const ServerConfig &server_config);
 // 정적 파일 처리
 Response handleStaticFile(const std::string &real_path, const ServerConfig &server_config);
+// 파일 업로드 처리
+Response handleUpload(const std::string &real_path, const Request &request, const LocationConfig &location_config,
+                      const ServerConfig &server_config);
+
+std::string buildRequestedPath(const std::string &path, const LocationConfig &location_config,
+                               const ServerConfig &server_config);
+// 업로드 디렉토리 생성
+bool ensureDirectoryExists(const std::string &fullPath);
+bool createSingleDir(const std::string &path);
 
 } // namespace ResponseHelpers
 

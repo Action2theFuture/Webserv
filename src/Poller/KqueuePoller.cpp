@@ -1,10 +1,6 @@
 #ifdef __APPLE__
 
 #include "KqueuePoller.hpp"
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <unistd.h>
 
 KqueuePoller::KqueuePoller() : changelist_count(0)
 {

@@ -15,9 +15,9 @@ REQUEST_DIR = $(SRC_DIR)/Request
 RESPONSE_DIR = $(SRC_DIR)/Response
 POLLER_DIR = $(SRC_DIR)/Poller
 
-SRC = main.cpp Utils.cpp Parser.cpp Configuration.cpp
+SRC = main.cpp Utils.cpp Configuration.cpp Log.cpp
 SERVER = Server.cpp SocketManager.cpp
-REQUEST = Request.cpp RequestHandler.cpp
+REQUEST = Request.cpp RequestHandler.cpp Parser.cpp
 RESPONSE = Response.cpp ResponseError.cpp ResponseHandler.cpp \
 		CGIHandler.cpp
 

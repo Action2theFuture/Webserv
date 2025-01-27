@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>파일 업로드</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 50%;
+            margin: 100px auto;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="file"],
+        textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="file"] {
+            height: 40px;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        input[type="submit"] {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .message {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>파일 업로드</h1>
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <label for="file">파일 선택:</label>
+            <input type="file" name="file" id="file" required>
+
+            <label for="description">설명:</label>
+            <textarea name="description" id="description" placeholder="파일에 대한 설명을 입력하세요"></textarea>
+
+            <input type="submit" value="upload">
+        </form>
+        <!-- 업로드 성공 또는 오류 메시지를 표시할 영역 -->
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        // 폼 제출 시 메시지 표시
+        const form = document.querySelector('form');
+        const messageDiv = document.getElementById('message');
+
+        form.addEventListener('submit', function (event) {
+            messageDiv.textContent = '업로드 중...';
+        });
+    </script>
+</body>
+
+</html>

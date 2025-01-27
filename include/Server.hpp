@@ -1,6 +1,15 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
+#include "Configuration.hpp"
+#include "Log.hpp"
+
+#ifdef __linux__
+#include "EpollPoller.hpp"
+#elif defined(__APPLE__)
+#include "KqueuePoller.hpp"
+#endif
+
 #include "Poller.hpp"
 #include "RequestHandler.hpp"
 #include "Response.hpp"
@@ -18,13 +27,13 @@ class Server
     // 생성자 및 소멸자
     Server(const std::string &configFile);
     ~Server();
-
     // 서버 실행
     void start();
 
   private:
     std::vector<ServerConfig> server_configs; // 서버 구성 리스트
     Poller *poller;                           // Poller 인터페이스 포인터
+    std::map<int, std::string> partialRequests;
 
     // 소켓 초기화
     void initSockets();
@@ -40,6 +49,11 @@ class Server
     void handleClientRead(int client_fd, const ServerConfig &server_config);
     void handleClientWrite(int client_fd);
     void safelyCloseClient(int client_fd);
+    // 반복 recv를 통해 데이터를 누적 (논블로킹)
+    // handleClientRead에서 호출
+    bool readClientData(int client_fd, std::string &buffer);
+    // 누적된 buffer를 해석해 요청 처리 (RequestHandler 호출)
+    bool handleReceivedData(int client_fd, const ServerConfig &server_config, std::string &buffer);
 
     // 비차단 모드 설정
     bool setNonBlocking(int fd);

@@ -1,14 +1,4 @@
 #include "Response.hpp"
-#include "CGIHandler.hpp" // For cgi_handler.execute if needed
-#include "Utils.hpp"      // trim, normalizePath, etc.
-#include <cerrno>
-#include <cstring>
-#include <fcntl.h>
-#include <fstream>
-#include <limits.h>
-#include <sstream>
-#include <sys/stat.h>
-#include <unistd.h>
 
 Response::Response() : status("200 OK"), headers(), body("")
 {
@@ -32,6 +22,22 @@ void Response::setBody(const std::string &content)
     body = content;
 }
 
+// 쿠키 설정 예시 (HttpOnly, Secure)
+void Response::setCookie(const std::string &key, const std::string &value, const std::string &path, int max_age)
+{
+    std::stringstream ss;
+    ss << key << "=" << value;
+    ss << "; Path=" << path;
+    if (max_age > 0)
+    {
+        ss << "; Max-Age=" << max_age;
+    }
+    ss << "; HttpOnly";        // JavaScript에서 접근 불가
+    ss << "; Secure";          // HTTPS에서만 전송
+    ss << "; SameSite=Strict"; // CSRF 방지
+    setHeader("Set-Cookie", ss.str());
+}
+
 std::string Response::toString() const
 {
     std::stringstream response_stream;
@@ -53,8 +59,9 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
+    std::cout << "Request Path : " << path << std::endl;
     // 메서드 확인
-    if (!isMethodAllowed(method, location_config))
+    if (path == location_config.path && !isMethodAllowed(method, location_config))
     {
         Response res = createErrorResponse(405, server_config);
         std::string allow_methods;
@@ -77,39 +84,7 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     }
 
     // 요청 경로 정규화
-    std::string requested_path;
-    if (path == "/")
-    {
-        // root + index
-        if (!server_config.root.empty())
-        {
-            if (server_config.root[server_config.root.size() - 1] == '/')
-                requested_path = server_config.root + location_config.index;
-            else
-                requested_path = server_config.root + "/" + location_config.index;
-        }
-        else
-        {
-            requested_path = location_config.index;
-        }
-    }
-    else
-    {
-        // root + path
-        if (!server_config.root.empty())
-        {
-            if (server_config.root[server_config.root.size() - 1] == '/')
-                requested_path = server_config.root + path;
-            else
-                requested_path = server_config.root + "/" + path;
-        }
-        else
-        {
-            requested_path = path;
-        }
-    }
-
-    std::string normalized_path = normalizePath(requested_path);
+    std::string normalized_path = buildRequestedPath(path, location_config, server_config);
     char real_path_cstr[PATH_MAX];
     if (realpath(normalized_path.c_str(), real_path_cstr) == NULL)
     {
@@ -126,7 +101,11 @@ Response Response::createResponse(const Request &request, const LocationConfig &
             return handleCGI(request, real_path, server_config);
         }
     }
-
+    if (path == "/upload" && iequals(method, "post"))
+    {
+        std::cout << "Request Path in condition : " << path << std::endl;
+        return handleUpload(real_path, request, location_config, server_config);
+    }
     // 정적 파일 처리
     return handleStaticFile(real_path, server_config);
 }
