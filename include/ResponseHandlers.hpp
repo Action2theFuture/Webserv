@@ -16,6 +16,13 @@ Response handleUpload(const std::string &real_path, const Request &request, cons
                       const ServerConfig &server_config);
 Response handleFileList(const Request &request, const LocationConfig &location_config,
                         const ServerConfig &server_config);
+Response handleDeleteFile(const Request &request, const LocationConfig &location_config,
+                          const ServerConfig &server_config);
+Response handleDeleteAllFiles(const LocationConfig &location_config, const ServerConfig &server_config);
+
+Response handleGetFileList(const LocationConfig &location_config, const ServerConfig &server_config);
+
+Response handleMethodNotAllowed(const LocationConfig &location_config, const ServerConfig &server_config);
 
 }; // namespace ResponseHandlers
 

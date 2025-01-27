@@ -379,7 +379,7 @@ bool Server::processClientRequest(int client_fd, const ServerConfig &server_conf
         return false;
     }
     // std::cout << "mached location path : " << matched_location->path << std::endl;
-    Response response = Response::generateResponse(request, server_config, matched_location);
+    Response response = Response::buildResponse(request, server_config, matched_location);
     sendResponse(client_fd, response);
 
     consumed = request_str.size();

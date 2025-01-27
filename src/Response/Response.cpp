@@ -22,6 +22,11 @@ void Response::setBody(const std::string &content)
     body = content;
 }
 
+std::string Response::getStatus() const
+{
+    return status;
+}
+
 std::string Response::toString() const
 {
     std::stringstream response_stream;
@@ -50,8 +55,8 @@ void Response::setCookie(const std::string &key, const std::string &value, const
     setHeader("Set-Cookie", ss.str());
 }
 
-Response Response::generateResponse(const Request &request, const ServerConfig &server_config,
-                                    const LocationConfig *location_config)
+Response Response::buildResponse(const Request &request, const ServerConfig &server_config,
+                                 const LocationConfig *location_config)
 {
 
     if (location_config)
@@ -73,53 +78,28 @@ Response Response::createResponse(const Request &request, const LocationConfig &
                                   const ServerConfig &server_config)
 {
     using namespace ResponseHandlers;
-    using namespace ResponseUtils;
 
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
     std::cout << "Request Path : " << path << std::endl;
-    // 메서드 확인
-    if (path == location_config.path && !isMethodAllowed(method, location_config))
-    {
-        Response res = createErrorResponse(405, server_config);
-        std::string allow_methods;
-        for (size_t m = 0; m < location_config.methods.size(); ++m)
-        {
-            allow_methods += location_config.methods[m];
-            if (m != location_config.methods.size() - 1)
-            {
-                allow_methods += ", ";
-            }
-        }
-        res.setHeader("Allow", allow_methods);
-        return res;
-    }
 
-    // 리디렉션 처리
+    bool isMethodValid = validateMethod(request, location_config);
+    if (!isMethodValid)
+        return handleMethodNotAllowed(location_config, server_config);
+
     if (!location_config.redirect.empty())
-    {
         return handleRedirection(location_config);
-    }
 
-    // 요청 경로 정규화
-    std::string normalized_path = buildRequestedPath(path, location_config, server_config);
-    char real_path_cstr[PATH_MAX];
-    if (realpath(normalized_path.c_str(), real_path_cstr) == NULL)
-    {
+    std::string real_path;
+    bool pathSuccess = getRealPath(path, location_config, server_config, real_path);
+    if (!pathSuccess)
         return createErrorResponse(404, server_config);
-    }
-    std::string real_path(real_path_cstr);
 
-    // CGI 처리
-    if (!location_config.cgi_extension.empty() && real_path.size() >= location_config.cgi_extension.size())
-    {
-        std::string ext = real_path.substr(real_path.size() - location_config.cgi_extension.size());
-        if (ext == location_config.cgi_extension)
-        {
-            return handleCGI(request, real_path, server_config);
-        }
-    }
+    bool isCGI = isCGIRequest(real_path, location_config);
+    if (isCGI)
+        return handleCGI(request, real_path, server_config);
+
     if (path == "/upload" && iequals(method, "post"))
     {
         std::cout << "Request Path in condition : " << path << std::endl;
@@ -131,8 +111,62 @@ Response Response::createResponse(const Request &request, const LocationConfig &
         std::cout << "Request Path in condition : " << path << std::endl;
         return handleFileList(request, location_config, server_config);
     }
-    // 정적 파일 처리
+
+    if (path == "/filelist/all" && iequals(method, "DELETE"))
+    {
+        std::cout << "Request Path in condition : " << path << std::endl;
+        return handleDeleteAllFiles(location_config, server_config);
+    }
     return handleStaticFile(real_path, server_config);
+}
+
+bool Response::validateMethod(const Request &request, const LocationConfig &location_config)
+{
+    using namespace ResponseUtils;
+    std::string method = request.getMethod();
+
+    // 메서드가 허용된 목록에 있는지 확인
+    for (size_t i = 0; i < location_config.methods.size(); ++i)
+    {
+        if (iequals(method, location_config.methods[i]))
+        {
+            return true; // 메서드가 허용됨
+        }
+    }
+
+    // 메서드가 허용되지 않음
+    std::string errorMsg = "Method not allowed: " + method;
+    LogConfig::logError(errorMsg);
+    return false;
+}
+
+bool Response::getRealPath(const std::string &path, const LocationConfig &location_config,
+                           const ServerConfig &server_config, std::string &real_path)
+{
+    using namespace ResponseUtils;
+    std::string normalized_path = buildRequestedPath(path, location_config, server_config);
+    char real_path_cstr[PATH_MAX];
+    if (realpath(normalized_path.c_str(), real_path_cstr) == NULL)
+    {
+        return false;
+    }
+    real_path = std::string(real_path_cstr);
+    return true;
+}
+
+bool Response::isCGIRequest(const std::string &real_path, const LocationConfig &location_config)
+{
+    using namespace ResponseUtils;
+    if (!location_config.cgi_extension.empty() && real_path.size() >= location_config.cgi_extension.size())
+    {
+        std::string ext = real_path.substr(real_path.size() - location_config.cgi_extension.size());
+        if (iequals(ext, location_config.cgi_extension))
+        {
+            std::cout << "CGI request detected." << std::endl;
+            return true;
+        }
+    }
+    return false;
 }
 
 std::string Response::readErrorPageFromFile(const std::string &file_path, int status)
@@ -207,7 +241,6 @@ Response Response::createErrorResponse(const int status, const ServerConfig &ser
     }
 
     std::string error_file_path = serv_it->second;
-    // 서브함수로 파일 읽기
     std::string file_content = readErrorPageFromFile(error_file_path, status);
 
     res.setBody(file_content);

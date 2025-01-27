@@ -57,7 +57,8 @@
         }
 
         /* 삭제 버튼 스타일 */
-        .delete-btn {
+        .delete-btn,
+        .delete-all-btn {
             padding: 8px 16px;
             background-color: #e74c3c;
             border: none;
@@ -67,8 +68,23 @@
             font-size: 14px;
         }
 
-        .delete-btn:hover {
+        .delete-btn:hover,
+        .delete-all-btn:hover {
             background-color: #c0392b;
+        }
+
+        /* 모든 파일 삭제 버튼 스타일 */
+        .delete-all-btn {
+            background-color: #c0392b;
+            margin-top: 20px;
+            width: 100%;
+            font-size: 16px;
+            display: none;
+            /* 초기에는 숨김 */
+        }
+
+        .delete-all-btn:hover {
+            background-color: #a93226;
         }
 
         .message {
@@ -90,6 +106,8 @@
         <ul class="file-list" id="file-list">
             <!-- 파일 목록이 여기에 동적으로 추가됩니다 -->
         </ul>
+        <!-- 모든 파일 삭제 버튼 추가 -->
+        <button class="delete-all-btn" id="delete-all-btn">모든 파일 삭제</button>
         <div class="message" id="message"></div>
     </div>
 
@@ -110,6 +128,7 @@
                 })
                 .then(data => {
                     const fileList = document.getElementById('file-list');
+                    const deleteAllBtn = document.getElementById('delete-all-btn');
                     fileList.innerHTML = ''; // 기존 목록 초기화
 
                     data.files.forEach(filename => {
@@ -138,6 +157,10 @@
                                         // 삭제 성공: 목록에서 항목 제거
                                         li.remove();
                                         showMessage(`${filename} 삭제 완료!`);
+                                        // 파일 목록이 비어있으면 "모든 파일 삭제" 버튼 숨김
+                                        if (fileList.children.length === 0) {
+                                            deleteAllBtn.style.display = 'none';
+                                        }
                                     } else {
                                         return response.text().then(text => { throw new Error(text); });
                                     }
@@ -152,10 +175,44 @@
                         li.appendChild(delBtn);
                         fileList.appendChild(li);
                     });
+
+                    // 파일이 하나 이상이면 "모든 파일 삭제" 버튼 표시, 아니면 숨김
+                    if (data.files.length > 0) {
+                        deleteAllBtn.style.display = 'block';
+                    } else {
+                        deleteAllBtn.style.display = 'none';
+                    }
                 })
                 .catch(error => {
                     console.error('파일 목록 로드 오류:', error);
                     showError('파일 목록을 불러오는 데 문제가 발생했습니다.');
+                });
+        }
+
+        // 모든 파일 삭제 버튼을 처리하는 함수
+        function deleteAllFiles() {
+            if (!confirm('정말 모든 파일을 삭제하시겠습니까?')) {
+                return;
+            }
+
+            fetch('/filelist/all', {
+                method: 'DELETE'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        // 모든 파일 삭제 성공
+                        const fileList = document.getElementById('file-list');
+                        const deleteAllBtn = document.getElementById('delete-all-btn');
+                        fileList.innerHTML = ''; // 목록 초기화
+                        deleteAllBtn.style.display = 'none'; // 버튼 숨김
+                        showMessage('모든 파일이 성공적으로 삭제되었습니다.');
+                    } else {
+                        return response.text().then(text => { throw new Error(text); });
+                    }
+                })
+                .catch(error => {
+                    console.error('모든 파일 삭제 오류:', error);
+                    showError(`모든 파일 삭제 중 오류 발생: ${error.message}`);
                 });
         }
 
@@ -176,6 +233,10 @@
         // 페이지 로드 시 파일 목록 로드
         document.addEventListener('DOMContentLoaded', function () {
             loadFileList();
+
+            // 모든 파일 삭제 버튼에 이벤트 리스너 추가
+            const deleteAllBtn = document.getElementById('delete-all-btn');
+            deleteAllBtn.addEventListener('click', deleteAllFiles);
         });
     </script>
 </body>

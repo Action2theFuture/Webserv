@@ -120,37 +120,25 @@ Response handleUpload(const std::string &real_path, const Request &request, cons
 {
     using namespace ResponseUtils;
     Response res;
-    // 파일 업로드 파싱
+
     const std::vector<UploadedFile> &files = request.getUploadedFiles();
     const std::map<std::string, std::string> &form_fields = request.getFormFields();
 
-    if (files.empty())
+    if (!validateUploadedFiles(files))
     {
-        std::cerr << "uploaded files are empty" << std::endl;
+        std::cerr << "Uploaded files are empty" << std::endl;
         res = Response::createErrorResponse(400, server_config); // Bad Request
         return res;
     }
 
-    // 업로드 디렉토리 확인
-    std::string upload_dir = location_config.upload_directory;
-    std::cerr << "Upload directory 1 : " << upload_dir << std::endl;
-    if (upload_dir.empty())
+    std::string upload_dir;
+    if (!getUploadDirectory(location_config, server_config, upload_dir))
     {
-        upload_dir = server_config.root; // 기본 루트 디렉토리 사용
-    }
-    std::cerr << "Upload directory 2 : " << upload_dir << std::endl;
-
-    if (!ensureDirectoryExists(upload_dir))
-    {
-        // 생성 실패 or 디렉토리 아님
         return Response::createErrorResponse(500, server_config); // Internal Server Error
     }
 
-    // 허용된 파일 확장자 목록 (필요 시 설정 파일에서 불러오기)
-    // std::vector<std::string> allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".txt", ".pdf"};
     std::vector<std::string> allowed_extensions = location_config.allowed_extensions;
 
-    // 추가적인 폼 필드 처리 (예: description)
     std::string description;
     std::map<std::string, std::string>::const_iterator desc_it = form_fields.find("description");
     if (desc_it != form_fields.end())
@@ -158,39 +146,26 @@ Response handleUpload(const std::string &real_path, const Request &request, cons
         description = desc_it->second;
     }
 
-    std::vector<std::string> uploaded_filenames; // 업로드된 파일 이름을 저장할 벡터
+    std::vector<std::string> uploaded_filenames;
+
     for (std::vector<UploadedFile>::const_iterator it = files.begin(); it != files.end(); ++it)
     {
-        const UploadedFile &file = *it;
-
-        // 파일 이름 정제
-        std::string sanitized_filename = sanitizeFilename(file.filename);
-
-        // 허용된 확장자 확인
-        if (!isAllowedExtension(sanitized_filename, allowed_extensions))
+        std::string sanitized_filename;
+        if (!saveUploadedFile(upload_dir, *it, sanitized_filename))
         {
-            LogConfig::logError("Disallowed extensions");
+            return Response::createErrorResponse(500, server_config); // Internal Server Error
+        }
+
+        if (!isFileExtensionAllowed(sanitized_filename, allowed_extensions))
+        {
+            std::string errorMsg = "Disallowed extensions: File Name: " + sanitized_filename;
+            LogConfig::logError(errorMsg);
             return Response::createErrorResponse(400, server_config); // Bad Request
         }
 
-        std::string file_path = upload_dir + "/" + sanitized_filename;
-
-        // 파일 저장
-        std::ofstream ofs(file_path.c_str(), std::ios::binary);
-        if (!ofs.is_open())
-        {
-            std::cerr << "Failed to open file for writing: " << file_path << std::endl;
-            return Response::createErrorResponse(500, server_config); // Internal Server Error
-        }
-        if (!file.data.empty())
-        {
-            ofs.write(&file.data[0], file.data.size());
-        }
-        ofs.close();
-
-        // 업로드된 파일 이름 추가
         uploaded_filenames.push_back(sanitized_filename);
     }
+
     return handleStaticFile(real_path, server_config);
 }
 
@@ -198,101 +173,122 @@ Response handleFileList(const Request &request, const LocationConfig &location_c
                         const ServerConfig &server_config)
 {
     using namespace ResponseUtils;
-
     std::string method = request.getMethod();
+
     if (iequals(method, "GET"))
     {
-        std::vector<std::string> files;
-        DIR *dir;
-        struct dirent *ent;
-        if ((dir = opendir(location_config.upload_directory.c_str())) != NULL)
-        {
-            while ((ent = readdir(dir)) != NULL)
-            {
-                // 현재 디렉토리와 상위 디렉토리는 제외
-                if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
-                    continue;
-
-                // 파일인지 디렉토리인지 확인
-                std::string filePath = std::string(location_config.upload_directory) + "/" + ent->d_name;
-                struct stat st;
-                if (stat(filePath.c_str(), &st) == 0)
-                {
-                    if (S_ISREG(st.st_mode))
-                    {
-                        files.push_back(ent->d_name);
-                    }
-                }
-            }
-            closedir(dir);
-        }
-        else
-        {
-            std::cerr << "디렉토리를 열 수 없습니다: " << location_config.upload_directory << std::endl;
-            return Response::createErrorResponse(500, server_config);
-        }
-        // 파일 목록을 JSON으로 변환
-        std::string jsonContent = generateFileListJSON(files);
-
-        // 응답 생성
-        Response res;
-        res.setStatus("200 OK");
-        res.setHeader("Content-Type", "application/json; charset=UTF-8");
-        res.setHeader("Content-Length", std::to_string(jsonContent.size()));
-        res.setBody(jsonContent);
-        return res;
+        return handleGetFileList(location_config, server_config);
     }
     else if (iequals(method, "DELETE"))
     {
-        // 쿼리 스트링에서 filename 추출
-        std::map<std::string, std::string> queryParams = request.getQueryParams();
-
-        if (queryParams.find("filename") == queryParams.end())
-        {
-            // filename 파라미터 없음
-            std::string responseBody = "filename 파라미터가 필요합니다.";
-            return Response::createErrorResponse(400, server_config);
-        }
-
-        std::string filename = queryParams["filename"];
-        // 파일 이름 검증
-        std::string sanitized_filename = sanitizeFilename(filename);
-        if (!isValidFilename(sanitized_filename))
-        {
-            std::string responseBody = "유효하지 않은 파일 이름입니다.";
-            return Response::createErrorResponse(400, server_config);
-        }
-
-        // 파일 삭제 경로 생성
-        std::string filePath = location_config.upload_directory + "/" + sanitized_filename;
-
-        // 파일 존재 여부 확인
-        if (access(filePath.c_str(), F_OK) == -1)
-        {
-            std::string responseBody = "파일이 존재하지 않습니다.";
-            return Response::createErrorResponse(404, server_config);
-        }
-
-        // 파일 삭제
-        if (remove(filePath.c_str()) != 0)
-        {
-            std::cerr << "파일 삭제 오류: " << filePath << std::endl;
-            std::string responseBody = "파일 삭제에 실패했습니다.";
-            return Response::createErrorResponse(500, server_config);
-        }
-
-        // 성공 응답 (JSON 형식)
-        std::string responseBody = "{ \"message\": \"파일이 성공적으로 삭제되었습니다.\" }";
-        Response res;
-        res.setStatus("200 OK");
-        res.setHeader("Content-Type", "application/json; charset=UTF-8");
-        res.setHeader("Content-Length", std::to_string(responseBody.size()));
-        res.setBody(responseBody);
-        return res;
+        return handleDeleteFile(request, location_config, server_config);
     }
     else
     {
+        std::string errorMsg = "Unsupported HTTP method: " + method;
+        LogConfig::logError(errorMsg);
         return Response::createErrorResponse(400, server_config);
     }
 }
+
+Response handleGetFileList(const LocationConfig &location_config, const ServerConfig &server_config)
+{
+    using namespace ResponseUtils;
+    Response res;
+    std::vector<std::string> files;
+
+    if (!listUploadedFiles(location_config.upload_directory, files))
+    {
+        return Response::createErrorResponse(500, server_config);
+    }
+
+    // 파일 목록을 JSON으로 변환
+    std::string jsonContent = generateFileListJSON(files);
+
+    // 성공 응답 생성
+    res.setStatus("200 OK");
+    res.setHeader("Content-Type", "application/json; charset=UTF-8");
+    res.setHeader("Content-Length", intToString(jsonContent.size()));
+    res.setBody(jsonContent);
+    return res;
+}
+
+Response handleDeleteFile(const Request &request, const LocationConfig &location_config,
+                          const ServerConfig &server_config)
+{
+    using namespace ResponseUtils;
+    Response res;
+
+    // 쿼리 스트링에서 filename 추출
+    std::map<std::string, std::string> queryParams = request.getQueryParams();
+
+    if (queryParams.find("filename") == queryParams.end())
+    {
+        std::string errorMsg = "filename parameter in DELETE is required.";
+        LogConfig::logError(errorMsg);
+        return Response::createErrorResponse(400, server_config);
+    }
+
+    std::string filename = queryParams["filename"];
+    // 파일 이름 검증
+    std::string sanitized_filename = sanitizeFilename(filename);
+    if (!isValidFilename(sanitized_filename))
+    {
+        std::string errorMsg = "Invalid filename: " + sanitized_filename;
+        LogConfig::logError(errorMsg);
+        return Response::createErrorResponse(400, server_config);
+    }
+
+    // 파일 삭제
+    if (!deleteUploadedFile(location_config.upload_directory, sanitized_filename))
+    {
+        return Response::createErrorResponse(500, server_config); // Internal Server Error
+    }
+
+    // 성공 응답 (JSON 형식)
+    std::string responseBody = "{ \"message\": \"File successfully deleted.\" }";
+    res.setStatus("200 OK");
+    res.setHeader("Content-Type", "application/json; charset=UTF-8");
+    res.setHeader("Content-Length", intToString(responseBody.size()));
+    res.setBody(responseBody);
+    return res;
+}
+
+Response handleDeleteAllFiles(const LocationConfig &location_config, const ServerConfig &server_config)
+{
+    using namespace ResponseUtils;
+    Response res;
+
+    // 모든 파일 삭제
+    if (!deleteAllUploadedFiles(location_config.upload_directory))
+    {
+        return Response::createErrorResponse(500, server_config); // Internal Server Error
+    }
+
+    // 성공 응답 (JSON 형식)
+    std::string responseBody = "{ \"message\": \"All files successfully deleted.\" }";
+    res.setStatus("200 OK");
+    res.setHeader("Content-Type", "application/json; charset=UTF-8");
+    res.setHeader("Content-Length", intToString(responseBody.size()));
+    res.setBody(responseBody);
+    return res;
+}
+
+Response handleMethodNotAllowed(const LocationConfig &location_config, const ServerConfig &server_config)
+{
+    Response res = Response::createErrorResponse(405, server_config);
+    std::string allow_methods;
+    for (size_t m = 0; m < location_config.methods.size(); ++m)
+    {
+        allow_methods += location_config.methods[m];
+        if (m != location_config.methods.size() - 1)
+        {
+            allow_methods += ", ";
+        }
+    }
+    res.setHeader("Allow", allow_methods);
+    std::cout << "Method not allowed. Returning 405." << std::endl;
+    return res;
+}
+
 } // namespace ResponseHandlers

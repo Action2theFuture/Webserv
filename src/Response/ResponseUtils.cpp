@@ -205,4 +205,162 @@ bool isMethodAllowed(const std::string &method, const LocationConfig &location_c
     return false;
 }
 
+bool validateUploadedFiles(const std::vector<UploadedFile> &files)
+{
+    return !files.empty();
+}
+
+bool getUploadDirectory(const LocationConfig &location_config, const ServerConfig &server_config,
+                        std::string &upload_dir)
+{
+    upload_dir = location_config.upload_directory;
+    if (upload_dir.empty())
+    {
+        upload_dir = server_config.root; // 기본 루트 디렉토리 사용
+    }
+
+    if (!ensureDirectoryExists(upload_dir))
+    {
+        std::string errorMsg = "Failed to ensure upload directory exists: " + upload_dir;
+        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+bool isFileExtensionAllowed(const std::string &filename, const std::vector<std::string> &allowed_extensions)
+{
+    return isAllowedExtension(filename, allowed_extensions);
+}
+
+bool saveUploadedFile(const std::string &upload_dir, const UploadedFile &file, std::string &sanitized_filename)
+{
+    // 파일 이름 정제
+    sanitized_filename = sanitizeFilename(file.filename);
+
+    // 파일 경로 생성
+    std::string file_path = upload_dir + "/" + sanitized_filename;
+
+    // 파일 저장
+    std::ofstream ofs(file_path.c_str(), std::ios::binary);
+    if (!ofs.is_open())
+    {
+        std::string errorMsg = "Failed to open file for writing: " + file_path;
+        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        return false;
+    }
+
+    if (!file.data.empty())
+    {
+        ofs.write(&file.data[0], file.data.size());
+    }
+    ofs.close();
+
+    return true;
+}
+
+bool deleteUploadedFile(const std::string &upload_dir, const std::string &filename)
+{
+    std::string filePath = upload_dir + "/" + filename;
+
+    // 파일 존재 여부 확인
+    if (access(filePath.c_str(), F_OK) == -1)
+    {
+        std::string errorMsg = "File does not exist: " + filePath;
+        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        return false;
+    }
+
+    // 파일 삭제
+    if (remove(filePath.c_str()) != 0)
+    {
+        std::string errorMsg = "Failed to delete file: " + filePath;
+        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+bool deleteAllUploadedFiles(const std::string &upload_dir)
+{
+    DIR *dir;
+    struct dirent *ent;
+    bool allDeleted = true;
+
+    if ((dir = opendir(upload_dir.c_str())) != NULL)
+    {
+        while ((ent = readdir(dir)) != NULL)
+        {
+            // 현재 디렉토리와 상위 디렉토리는 제외
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+                continue;
+
+            // 파일인지 디렉토리인지 확인
+            std::string filePath = upload_dir + "/" + ent->d_name;
+            struct stat st;
+            if (stat(filePath.c_str(), &st) == 0)
+            {
+                if (S_ISREG(st.st_mode))
+                {
+                    if (!deleteUploadedFile(upload_dir, ent->d_name))
+                    {
+                        allDeleted = false;
+                        // 삭제 실패한 파일에 대한 로그는 deleteUploadedFile에서 이미 기록됨
+                    }
+                }
+            }
+        }
+        closedir(dir);
+        return allDeleted;
+    }
+    else
+    {
+        std::string errorMsg = "Failed to open directory for deletion: " + upload_dir;
+        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        return false;
+    }
+}
+
+bool listUploadedFiles(const std::string &upload_dir, std::vector<std::string> &files)
+{
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir(upload_dir.c_str())) != NULL)
+    {
+        while ((ent = readdir(dir)) != NULL)
+        {
+            // 현재 디렉토리와 상위 디렉토리는 제외
+            if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
+                continue;
+
+            // 파일인지 디렉토리인지 확인
+            std::string filePath = upload_dir + "/" + ent->d_name;
+            struct stat st;
+            if (stat(filePath.c_str(), &st) == 0)
+            {
+                if (S_ISREG(st.st_mode))
+                {
+                    files.push_back(ent->d_name);
+                }
+            }
+        }
+        closedir(dir);
+        return true;
+    }
+    else
+    {
+        std::string errorMsg = "Failed to open directory: " + upload_dir;
+        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        return false;
+    }
+}
+
+std::string generateSuccessResponse(const std::string &jsonContent)
+{
+    // 성공 응답 생성 (JSON 형식)
+    std::string responseBody = jsonContent;
+    return responseBody;
+}
 } // namespace ResponseUtils

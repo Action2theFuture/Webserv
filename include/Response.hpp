@@ -33,15 +33,12 @@ class Response
     // 정적 메서드로 응답 생성
     static Response createResponse(const Request &request, const LocationConfig &location_config,
                                    const ServerConfig &server_config);
-    static Response generateResponse(const Request &request, const ServerConfig &server_config,
-                                     const LocationConfig *location_config);
-    // createErrorResponse: 에러 응답 생성 (긴 함수, 내부적으로 서브함수 나눌 수도
-    // 있음)
+    static Response buildResponse(const Request &request, const ServerConfig &server_config,
+                                  const LocationConfig *location_config);
     static Response createErrorResponse(int status, const ServerConfig &server_config);
-
     // 응답을 문자열로 변환
     std::string toString() const;
-
+    std::string getStatus() const;
     // 상태, 헤더, 본문 설정 메서드
     void setStatus(const std::string &status_code);
     void setHeader(const std::string &key, const std::string &value);
@@ -54,6 +51,13 @@ class Response
     std::map<std::string, std::string> headers;
     std::string body;
     static std::string readErrorPageFromFile(const std::string &file_path, int status);
+    static bool validateMethod(const Request &request, const LocationConfig &location_config);
+    static bool getRealPath(const std::string &path, const LocationConfig &location_config,
+                            const ServerConfig &server_config, std::string &real_path);
+    static bool isCGIRequest(const std::string &real_path, const LocationConfig &location_config);
+    Response handleGetFileList(const LocationConfig &location_config, const ServerConfig &server_config);
+    Response handleDeleteFile(const Request &request, const LocationConfig &location_config,
+                              const ServerConfig &server_config);
 };
 
 #endif // RESPONSE_HPP
