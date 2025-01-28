@@ -26,7 +26,7 @@ ServerConfig Configuration::initializeServerConfig()
 // 가장 긴 경로를 가진 위치 블록을 검사
 const LocationConfig *findBestMatchingLocation(const std::string &path, const ServerConfig &server_config)
 {
-    const LocationConfig *best_match = nullptr;
+    const LocationConfig *best_match = NULL;
     size_t max_length = 0;
 
     for (size_t i = 0; i < server_config.locations.size(); ++i)

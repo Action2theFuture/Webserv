@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 std::string getMimeType(const std::string &path);
 std::string normalizePath(const std::string &path);
