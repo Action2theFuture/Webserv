@@ -336,7 +336,7 @@ bool Parser::parseContentDisposition(const std::string &header_value, std::map<s
             trimString(key);
             trimString(value);
 
-            if (!value.empty() && value.front() == '"' && value.back() == '"')
+	    if (!value.empty() && value[0] == '"' && value[value.size() - 1] == '"')
             {
                 value = value.substr(1, value.size() - 2);
             }
