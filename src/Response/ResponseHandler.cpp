@@ -229,14 +229,14 @@ std::string buildRequestedPath(const std::string &path, const LocationConfig &lo
         // root + index
         if (!location_config.root.empty())
         {
-            if (location_config.root.back() == '/')
+	     if (location_config.root[location_config.root.size() - 1] == '/')
                 requested_path = location_config.root + location_config.index;
             else
                 requested_path = location_config.root + "/" + location_config.index;
         }
         else if (!server_config.root.empty())
         {
-            if (server_config.root.back() == '/')
+	    if (server_config.root[server_config.root.size() - 1] == '/')
                 requested_path = server_config.root + location_config.index;
             else
                 requested_path = server_config.root + "/" + location_config.index;
@@ -256,14 +256,14 @@ std::string buildRequestedPath(const std::string &path, const LocationConfig &lo
             // root + index (for exact location match)
             if (!location_config.root.empty())
             {
-                if (location_config.root.back() == '/')
+	        if (location_config.root[location_config.root.size() - 1] == '/')
                     requested_path = location_config.root + location_config.index;
                 else
                     requested_path = location_config.root + "/" + location_config.index;
             }
             else if (!server_config.root.empty())
             {
-                if (server_config.root.back() == '/')
+	        if (server_config.root[server_config.root.size() - 1] == '/')
                     requested_path = server_config.root + location_config.index;
                 else
                     requested_path = server_config.root + "/" + location_config.index;
@@ -278,14 +278,14 @@ std::string buildRequestedPath(const std::string &path, const LocationConfig &lo
             // root + path
             if (!location_config.root.empty())
             {
-                if (location_config.root.back() == '/')
+	        if (location_config.root[location_config.root.size() - 1] == '/')
                     requested_path = location_config.root + path.substr(location_config.path.length());
                 else
                     requested_path = location_config.root + "/" + path.substr(location_config.path.length());
             }
             else if (!server_config.root.empty())
             {
-                if (server_config.root.back() == '/')
+	        if (server_config.root[server_config.root.size() - 1] == '/')
                     requested_path = server_config.root + path;
                 else
                     requested_path = server_config.root + "/" + path;
