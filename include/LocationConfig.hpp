@@ -31,6 +31,8 @@ struct LocationConfig
     // 업로드 관련 설정
     std::string upload_directory;
     std::vector<std::string> allowed_extensions;
+
+    unsigned long client_max_body_size;
     // 추가적인 설정 항목
 
     // 생성자: 기본값 설정

@@ -26,6 +26,7 @@ class Configuration
     ServerConfig initializeServerConfig();
     LocationConfig initializeLocationConfig(const std::string &line);
 
+    unsigned long parseSize(const std::string &value);
     void parseServerConfig(const std::string &line, ServerConfig &server_config);
     void parseLocationConfig(const std::string &line, LocationConfig &location_config);
     void printConfiguration() const;

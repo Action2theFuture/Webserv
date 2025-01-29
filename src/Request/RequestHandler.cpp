@@ -13,7 +13,7 @@ void RequestHandler::sendResponse(int client_fd, const Response &response)
         {
             // C++98 방식으로 숫자 변환
             std::cerr << "send() failed for client_fd " << client_fd << ": " << strerror(errno) << std::endl;
-            LogConfig::logError("send() failed for client_fd " + intToString(client_fd) + ": " + strerror(errno));
+            LogConfig::logError("send() failed for client_fd " + numberToString(client_fd) + ": " + strerror(errno));
             break;
         }
         total_sent += sent;

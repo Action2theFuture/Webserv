@@ -92,7 +92,7 @@ void Server::processEvents(const std::vector<Event> &events)
 
         if (fd < 0)
         {
-            LogConfig::logError("Invalid file descriptor in events[" + intToString(i) + "]");
+            LogConfig::logError("Invalid file descriptor in events[" + numberToString(i) + "]");
             continue;
         }
 
@@ -130,14 +130,14 @@ void Server::handleNewConnection(int server_fd)
 
     if (!setNonBlocking(client_fd))
     {
-        LogConfig::logError("Failed to set non-blocking mode for client_fd " + intToString(client_fd));
+        LogConfig::logError("Failed to set non-blocking mode for client_fd " + numberToString(client_fd));
         close(client_fd);
         return;
     }
 
     if (!poller->add(client_fd, POLLER_READ))
     {
-        LogConfig::logError("Failed to add client_fd " + intToString(client_fd) + " to poller");
+        LogConfig::logError("Failed to add client_fd " + numberToString(client_fd) + " to poller");
         close(client_fd);
     }
 }

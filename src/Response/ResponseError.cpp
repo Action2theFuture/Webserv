@@ -61,7 +61,7 @@ Response createErrorResponse(const int status, const ServerConfig &server_config
         // 키가 없음 -> 기본 메시지
         std::stringstream ss;
         ss << "Error " << status << " (No error page found in server_config)";
-        LogConfig::logError("(No error page found in server_config) / status : " + intToString(status) + ": " +
+        LogConfig::logError("(No error page found in server_config) / status : " + numberToString(status) + ": " +
                             strerror(errno));
         std::string default_error = ss.str();
         res.setBody(default_error);

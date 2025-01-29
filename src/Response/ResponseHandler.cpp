@@ -320,6 +320,26 @@ Response handleUpload(const std::string &real_path, const Request &request, cons
         return res;
     }
 
+    // 업로드된 파일의 총 크기 계산
+    unsigned long total_size = 0;
+    for (std::vector<UploadedFile>::const_iterator it = files.begin(); it != files.end(); ++it)
+    {
+        total_size += it->data.size();
+    }
+
+    // 클라이언트 바디 크기 제한 확인
+    unsigned long limit = server_config.client_max_body_size;
+    if (location_config.client_max_body_size > 0)
+        limit = location_config.client_max_body_size;
+    limit = location_config.client_max_body_size;
+    if (limit > 0 && total_size > limit)
+    {
+        std::cerr << "Uploaded file size (" << total_size << " bytes) exceeds the limit_client_body_size (" << limit
+                  << " bytes)." << std::endl;
+        res = createErrorResponse(400, server_config); // Bad Request
+        return res;
+    }
+
     // 업로드 디렉토리 확인
     std::string upload_dir = location_config.upload_directory;
     std::cerr << "Upload directory 1 : " << upload_dir << std::endl;

@@ -7,7 +7,7 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index)
     std::cout << "  Listen Port: " << server.port << std::endl;
     std::cout << "  Server Name: " << server.server_name << std::endl;
     std::cout << "  Root: " << server.root << std::endl;
-    std::cout << "  Client Max Body Size: " << server.client_max_body_size << std::endl;
+    std::cout << "  Client Max Body Size: " << numberToString(server.client_max_body_size) << std::endl;
     std::cout << "  Error Pages:" << std::endl;
     for (std::map<int, std::string>::const_iterator it = server.error_pages.begin(); it != server.error_pages.end();
          ++it)
@@ -42,6 +42,7 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index)
             }
         }
         std::cout << std::endl;
+        std::cout << "      Client Max Body Size: " << numberToString(location.client_max_body_size) << std::endl;
         std::cout << "      Directory Listing: " << (location.directory_listing ? "on" : "off") << std::endl;
         std::cout << "      Index: " << location.index << std::endl;
         std::cout << "      CGI Extension: " << location.cgi_extension << std::endl;

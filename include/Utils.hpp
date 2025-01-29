@@ -17,12 +17,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// C++98 호환을 위한 number to string 변환 템플릿 정의
+template <typename T> std::string numberToString(T number)
+{
+    std::stringstream ss;
+    ss << number;
+    return ss.str();
+}
+
 std::string getMimeType(const std::string &path);
 std::string normalizePath(const std::string &path);
 std::string trim(const std::string &str);
 
-// C++98 호환을 위한 int to string 변환 함수 선언
-std::string intToString(int number);
 std::string toLower(const std::string &str);
 std::string sanitizeFilename(const std::string &filename);
 

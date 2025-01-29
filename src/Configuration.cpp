@@ -118,6 +118,13 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
             location_config.allowed_extensions.push_back(extension);
         }
     }
+    else if (key == "client_max_body_size")
+    {
+        std::string size;
+        iss >> size;
+        location_config.client_max_body_size = parseSize(size);
+    }
+
     // 추가적인 위치 설정 항목 파싱
 }
 
@@ -168,9 +175,10 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
     }
     else if (key == "client_max_body_size")
     {
-        size_t size;
+        std::string size;
         iss >> size;
-        server_config.client_max_body_size = size;
+        std::cerr << "Size: " << size << std::endl;
+        server_config.client_max_body_size = parseSize(size);
     }
     // 추가적인 서버 설정 항목 파싱
 }
@@ -201,7 +209,7 @@ bool Configuration::parseConfigFile(const std::string &filename)
         // 세미콜론으로 끝나는 라인 처리
         if (!line.empty() && line[line.size() - 1] == ';')
         {
-            line.erase(line.size() - 1); // 세미콜론 제거
+            line.erase(line.size() - 1, 1); // 세미콜론 제거
         }
 
         if (line.find("server {") != std::string::npos)
@@ -259,4 +267,52 @@ bool Configuration::parseConfigFile(const std::string &filename)
     file.close();
     printConfiguration();
     return true;
+}
+
+unsigned long Configuration::parseSize(const std::string &value)
+{
+    std::string temp_value = value;
+    if (temp_value.empty())
+    {
+        std::cerr << "limit_client_body_size is Empty" << std::endl;
+        return 0;
+    }
+
+    if (!temp_value.empty() && temp_value[temp_value.size() - 1] == ';')
+        temp_value.erase(temp_value.size() - 1, 1); // 세미콜론 제거
+
+    char unit = temp_value[temp_value.size() - 1];
+    std::string number = (unit == 'K' || unit == 'M' || unit == 'G' || unit == 'k' || unit == 'm' || unit == 'g')
+                             ? temp_value.substr(0, temp_value.size() - 1)
+                             : temp_value;
+
+    unsigned long size = strtoul(number.c_str(), NULL, 10);
+
+    const unsigned long KILOBYTE = 1024;
+    const unsigned long MEGABYTE = 1024 * KILOBYTE;
+    const unsigned long GIGABYTE = 1024 * MEGABYTE;
+
+    switch (unit)
+    {
+    case 'G':
+    case 'g':
+        size *= GIGABYTE;
+        break;
+    case 'M':
+    case 'm':
+        size *= MEGABYTE;
+        break;
+    case 'K':
+    case 'k':
+        size *= KILOBYTE;
+        break;
+    default:
+        if (unit != '\0') // 지원되지 않는 단위일 경우
+        {
+            std::cerr << "Unsupported unit for limit_client_body_size: " << unit << ". Using bytes." << std::endl;
+        }
+        break;
+    }
+
+    return size;
 }

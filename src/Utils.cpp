@@ -71,14 +71,6 @@ std::string trim(const std::string &str)
     return str.substr(first, (last - first + 1));
 }
 
-// C++98 호환을 위한 int to string 변환 함수 정의
-std::string intToString(int number)
-{
-    std::stringstream ss;
-    ss << number;
-    return ss.str();
-}
-
 // 파일 이름 정제를 위한 함수 객체(디렉토리 트래버셜 방지)
 struct IsNotAllowedChar
 {
