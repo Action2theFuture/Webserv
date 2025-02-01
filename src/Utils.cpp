@@ -29,6 +29,8 @@ std::string normalizePath(const std::string &path)
 {
     std::string normalized;
     size_t i = 0;
+    if (path.empty())
+        return "/";
     while (i < path.size())
     {
         if (path[i] == '/' && i + 1 < path.size() && path[i + 1] == '/')
@@ -39,7 +41,7 @@ std::string normalizePath(const std::string &path)
         }
         if (path[i] == '/' && i + 1 < path.size() && path[i + 1] == '.' && (i + 2 == path.size() || path[i + 2] == '/'))
         {
-            // "/./" 제거
+            // "/./" 또는 "/." 형태를 건너뛰기
             i += 2;
             continue;
         }
@@ -53,12 +55,26 @@ std::string normalizePath(const std::string &path)
             {
                 normalized.erase(last_slash);
             }
+            else
+            {
+                // normalized가 비어있다면 (이미 루트보다 위로 가는 경우)
+                // 루트("/")를 유지하거나, 그냥 비워둘지 정책 결정
+                // 여기서는 그냥 비워둔 상태로 둔다고 가정
+                // (만약 항상 "/"로 남기고 싶다면, normalized = ""; 로 유지)
+                normalized = "";
+            }
             i += 3;
             continue;
         }
         normalized += path[i];
         ++i;
     }
+    //    ("/../../.." 같은 입력)
+    if (normalized.empty())
+        return "/";
+    //   예: "/foo/bar/" -> "/foo/bar"
+    if (normalized.size() > 1 && normalized[normalized.size() - 1] == '/')
+        normalized.erase(normalized.size() - 1);
     return normalized;
 }
 
@@ -182,4 +198,11 @@ std::string urlDecode(const std::string &SRC)
         }
     }
     return ret;
+}
+
+std::string trimTrailingSlash(const std::string &path)
+{
+    if (path.size() > 1 && path[path.size() - 1] == '/')
+        return path.substr(0, path.size() - 1);
+    return path;
 }

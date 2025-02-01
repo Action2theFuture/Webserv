@@ -27,6 +27,7 @@ std::string intToString(int number);
 std::string toLower(const std::string &str);
 std::string sanitizeFilename(const std::string &filename);
 
+std::string trimTrailingSlash(const std::string &path);
 std::string urlDecode(const std::string &SRC);
 
 bool isValidFilename(const std::string &filename);

@@ -5,7 +5,7 @@
 
 namespace ResponseUtils
 {
-std::string buildRequestedPath(const std::string &path, const LocationConfig &location_config,
+std::string buildRequestedPath(const std::string &original_path, const LocationConfig &location_config,
                                const ServerConfig &server_config);
 
 // 메서드 허용 검사
