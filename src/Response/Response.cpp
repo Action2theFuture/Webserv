@@ -22,6 +22,23 @@ void Response::setBody(const std::string &content)
     body = content;
 }
 
+std::string Response::getStatus() const
+{
+    return status;
+}
+
+std::string Response::toString() const
+{
+    std::stringstream response_stream;
+    response_stream << "HTTP/1.1 " << this->status << "\r\n";
+    for (std::map<std::string, std::string>::const_iterator it = this->headers.begin(); it != this->headers.end(); ++it)
+    {
+        response_stream << it->first << ": " << it->second << "\r\n";
+    }
+    response_stream << "\r\n" << this->body;
+    return response_stream.str();
+}
+
 // 쿠키 설정 예시 (HttpOnly, Secure)
 void Response::setCookie(const std::string &key, const std::string &value, const std::string &path, int max_age)
 {
@@ -38,74 +55,200 @@ void Response::setCookie(const std::string &key, const std::string &value, const
     setHeader("Set-Cookie", ss.str());
 }
 
-std::string Response::toString() const
+Response Response::buildResponse(const Request &request, const ServerConfig &server_config,
+                                 const LocationConfig *location_config)
 {
-    std::stringstream response_stream;
-    response_stream << "HTTP/1.1 " << status << "\r\n";
-    for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it)
+
+    if (location_config)
     {
-        response_stream << it->first << ": " << it->second << "\r\n";
+        return Response::createResponse(request, *location_config, server_config);
     }
-    response_stream << "\r\n" << body;
-    return response_stream.str();
+
+    // 기본 위치 설정에 따른 처리
+    LocationConfig default_location;
+    default_location.path = "/";
+    default_location.methods.push_back("GET");
+    default_location.directory_listing = false;
+    default_location.index = DEFAULT_INDEX_PATH;
+    return Response::createResponse(request, default_location, server_config);
 }
 
 // 메인 함수: createResponse
 Response Response::createResponse(const Request &request, const LocationConfig &location_config,
                                   const ServerConfig &server_config)
 {
-    using namespace ResponseHelpers; // namespace import
+    using namespace ResponseHandlers;
 
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
     std::cout << "Request Path : " << path << std::endl;
-    // 메서드 확인
-    if (path == location_config.path && !isMethodAllowed(method, location_config))
-    {
-        Response res = createErrorResponse(405, server_config);
-        std::string allow_methods;
-        for (size_t m = 0; m < location_config.methods.size(); ++m)
-        {
-            allow_methods += location_config.methods[m];
-            if (m != location_config.methods.size() - 1)
-            {
-                allow_methods += ", ";
-            }
-        }
-        res.setHeader("Allow", allow_methods);
-        return res;
-    }
 
-    // 리디렉션 처리
+    bool isMethodValid = validateMethod(request, location_config);
+    if (!isMethodValid)
+        return handleMethodNotAllowed(location_config, server_config);
+
     if (!location_config.redirect.empty())
-    {
         return handleRedirection(location_config);
-    }
 
-    // 요청 경로 정규화
-    std::string normalized_path = buildRequestedPath(path, location_config, server_config);
-    char real_path_cstr[PATH_MAX];
-    if (realpath(normalized_path.c_str(), real_path_cstr) == NULL)
-    {
+    std::string real_path;
+    bool pathSuccess = getRealPath(path, location_config, server_config, real_path);
+    if (!pathSuccess)
         return createErrorResponse(404, server_config);
-    }
-    std::string real_path(real_path_cstr);
 
-    // CGI 처리
-    if (!location_config.cgi_extension.empty() && real_path.size() >= location_config.cgi_extension.size())
-    {
-        std::string ext = real_path.substr(real_path.size() - location_config.cgi_extension.size());
-        if (ext == location_config.cgi_extension)
-        {
-            return handleCGI(request, real_path, server_config);
-        }
-    }
+    bool isCGI = isCGIRequest(real_path, location_config);
+    if (isCGI)
+        return handleCGI(request, real_path, server_config);
+
     if (path == "/upload" && iequals(method, "post"))
     {
         std::cout << "Request Path in condition : " << path << std::endl;
         return handleUpload(real_path, request, location_config, server_config);
     }
-    // 정적 파일 처리
+
+    if (path == "/filelist")
+    {
+        std::cout << "Request Path in condition : " << path << std::endl;
+        return handleFileList(request, location_config, server_config);
+    }
+
+    if (path == "/filelist/all" && iequals(method, "DELETE"))
+    {
+        std::cout << "Request Path in condition : " << path << std::endl;
+        return handleDeleteAllFiles(location_config, server_config);
+    }
     return handleStaticFile(real_path, server_config);
+}
+
+bool Response::validateMethod(const Request &request, const LocationConfig &location_config)
+{
+    using namespace ResponseUtils;
+    std::string method = request.getMethod();
+
+    // 메서드가 허용된 목록에 있는지 확인
+    for (size_t i = 0; i < location_config.methods.size(); ++i)
+    {
+        if (iequals(method, location_config.methods[i]))
+        {
+            return true; // 메서드가 허용됨
+        }
+    }
+
+    // 메서드가 허용되지 않음
+    std::string errorMsg = "Method not allowed: " + method;
+    LogConfig::logError(errorMsg);
+    return false;
+}
+
+bool Response::getRealPath(const std::string &path, const LocationConfig &location_config,
+                           const ServerConfig &server_config, std::string &real_path)
+{
+    using namespace ResponseUtils;
+    std::string normalized_path = buildRequestedPath(path, location_config, server_config);
+    char real_path_cstr[PATH_MAX];
+    if (realpath(normalized_path.c_str(), real_path_cstr) == NULL)
+    {
+        return false;
+    }
+    real_path = std::string(real_path_cstr);
+    return true;
+}
+
+bool Response::isCGIRequest(const std::string &real_path, const LocationConfig &location_config)
+{
+    using namespace ResponseUtils;
+    if (!location_config.cgi_extension.empty() && real_path.size() >= location_config.cgi_extension.size())
+    {
+        std::string ext = real_path.substr(real_path.size() - location_config.cgi_extension.size());
+        if (iequals(ext, location_config.cgi_extension))
+        {
+            std::cout << "CGI request detected." << std::endl;
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string Response::readErrorPageFromFile(const std::string &file_path, int status)
+{
+    int fd = open(file_path.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        // 파일 열기 실패
+        std::stringstream ss;
+        ss << "Error " << status << " (Failed to open file: " << file_path << ")";
+        LogConfig::logError("(Failed to open file" + file_path + ": " + strerror(errno));
+        return ss.str(); // 에러 메시지 반환
+    }
+
+    std::string file_content;
+    char buffer[4096];
+    ssize_t bytes_read;
+    while ((bytes_read = read(fd, buffer, 4096)) > 0)
+    {
+        file_content.append(buffer, bytes_read);
+    }
+    close(fd);
+
+    if (bytes_read == -1)
+    {
+        std::stringstream ss;
+        ss << "Error " << status << " (Failed to read file: " << file_path << ")";
+        LogConfig::logError("(Failed to read file" + file_path + ": " + strerror(errno));
+        return ss.str();
+    }
+
+    return file_content; // 정상적으로 읽은 HTML 코드
+}
+
+// createErrorResponse 메인
+Response Response::createErrorResponse(const int status, const ServerConfig &server_config)
+{
+    Response res;
+    std::string status_text;
+    if (status == 400)
+        status_text = NOT_FOUND_400;
+    else if (status == 404)
+        status_text = BAD_REQUEST_404;
+    else if (status == 405)
+        status_text = METHOD_NOT_ALLOWED_405;
+    else if (status == 500)
+        status_text = INTERNAL_SERVER_ERROR_500;
+    else
+    {
+        std::stringstream ss;
+        ss << status;
+        status_text = ss.str() + " Error";
+    }
+    res.setStatus(status_text);
+    res.setHeader("Content-Type", "text/html");
+
+    std::map<int, std::string>::const_iterator serv_it = server_config.error_pages.find(status);
+    if (serv_it == server_config.error_pages.end())
+    {
+        // 키가 없음 -> 기본 메시지
+        std::stringstream ss;
+        ss << "Error " << status << " (No error page found in server_config)";
+        LogConfig::logError("(No error page found in server_config) / status : " + intToString(status) + ": " +
+                            strerror(errno));
+        std::string default_error = ss.str();
+        res.setBody(default_error);
+
+        std::stringstream ss_len;
+        ss_len << default_error.size();
+        res.setHeader("Content-Length", ss_len.str());
+        return res;
+    }
+
+    std::string error_file_path = serv_it->second;
+    std::string file_content = readErrorPageFromFile(error_file_path, status);
+
+    res.setBody(file_content);
+    {
+        std::stringstream ss_len;
+        ss_len << file_content.size();
+        res.setHeader("Content-Length", ss_len.str());
+    }
+    LogConfig::logError(status_text + ": " + strerror(errno));
+    return res;
 }

@@ -17,8 +17,8 @@ POLLER_DIR = $(SRC_DIR)/Poller
 
 SRC = main.cpp Utils.cpp Configuration.cpp Log.cpp
 SERVER = Server.cpp SocketManager.cpp
-REQUEST = Request.cpp RequestHandler.cpp Parser.cpp
-RESPONSE = Response.cpp ResponseError.cpp ResponseHandler.cpp \
+REQUEST = Request.cpp Parser.cpp
+RESPONSE = Response.cpp ResponseHandlers.cpp ResponseUtils.cpp \
 		CGIHandler.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRC))
