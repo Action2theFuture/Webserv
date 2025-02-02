@@ -98,6 +98,7 @@ Response Response::createResponse(const Request &request, const LocationConfig &
         return createErrorResponse(404, server_config);
 
     bool isCGI = isCGIRequest(real_path, location_config);
+    std::cout << "Debug: isCGIRequest bool: " << isCGI << std::endl;
     if (isCGI)
         return handleCGI(request, real_path, server_config);
 

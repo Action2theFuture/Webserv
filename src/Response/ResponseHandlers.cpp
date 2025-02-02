@@ -21,6 +21,30 @@ Response handleRedirection(const LocationConfig &location_config)
 
 Response handleCGI(const Request &request, const std::string &real_path, const ServerConfig &server_config)
 {
+
+    /* char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) == NULL)
+    {
+        std::cerr << "Debug: Failed to get current working directory" << std::endl;
+        return Response::createErrorResponse(500, server_config); // or handle the error appropriately
+    } */
+
+    //std::string full_path = std::string(cwd) + real_path;
+    //std::cout << "Debug: Full CGI script path: " << full_path << std::endl;
+
+    std::cout << "Debug: Real path: " << real_path << std::endl;
+    //std::cout << "Debug: Full path: " << full_path << std::endl;
+
+
+
+    struct stat buffer;
+    if (stat(real_path.c_str(), &buffer) != 0)
+    {
+        std::cerr << "Debug: Resource not available" << std::endl;
+        return Response::createErrorResponse(404, server_config);
+    }
+
+
     Response res;
     CGIHandler cgi_handler;
     std::string cgi_output, cgi_content_type;
