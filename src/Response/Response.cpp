@@ -82,6 +82,8 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
+    std::cout << "Debug: path in beginning: " << std::endl;
+
     std::cout << "Request Path : " << path << std::endl;
 
     bool isMethodValid = validateMethod(request, location_config);
@@ -102,6 +104,8 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     if (isCGI)
         return handleCGI(request, real_path, server_config);
 
+    std::cout << "Debug: -- after checking isCGI" << std::endl;
+    std::cout << "Debug: path = " << std::endl;
     if (path == "/upload" && iequals(method, "post"))
     {
         std::cout << "Request Path in condition : " << path << std::endl;

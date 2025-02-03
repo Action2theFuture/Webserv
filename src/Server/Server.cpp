@@ -318,6 +318,41 @@ const LocationConfig *matchLocationConfig(const Request &request, const ServerCo
 {
     std::cout << "===========================================" << std::endl;
 
+    std::string req_path = request.getPath();
+    std::cout << "Debug: Matching path: " << req_path << std::endl;
+
+    const LocationConfig *matched_location = NULL;
+    size_t longest_match = 0;
+
+    for (size_t loc = 0; loc < server_config.locations.size(); ++loc)
+    {
+        std::string loc_path = server_config.locations[loc].path;
+        std::cout << "Checking against location: " << loc_path << std::endl;
+
+        if (req_path.compare(0, loc_path.length(), loc_path) == 0)
+        {
+            if (loc_path.length() > longest_match)
+            {
+                matched_location = &server_config.locations[loc];
+                longest_match = loc_path.length();
+                std::cout << "New matched location: " << loc_path << std::endl;
+            }
+        }
+    }
+
+    if (matched_location)
+        std::cout << "Final matched location: " << matched_location->path << std::endl;
+    else
+        std::cout << "No matching location found for path: " << req_path << std::endl;
+
+    return matched_location;
+}
+
+
+/* const LocationConfig *matchLocationConfig(const Request &request, const ServerConfig &server_config)
+{
+    std::cout << "===========================================" << std::endl;
+
     // root request
     if (request.getPath() == "/" || request.getPath().empty())
     {
@@ -375,75 +410,7 @@ const LocationConfig *matchLocationConfig(const Request &request, const ServerCo
 
     return matched_location;
 }
-
-
-/* const LocationConfig *matchLocationConfig(const Request &request, const ServerConfig &server_config)
-{
-    std::cout << "===========================================" << std::endl;
-
-    // root request
-    if (request.getPath() == "/" || request.getPath().empty())
-    {
-        std::cout << "Debug: Root request detected" << std::endl;
-        // location config for "/"
-        for (size_t loc = 0; loc < server_config.locations.size(); ++loc)
-        {
-            if (server_config.locations[loc].path == "/")
-            {
-                std::cout << "Debug: Matched root location" << std::endl;
-                return &server_config.locations[loc];
-            }
-        }
-        std::cout << "Debug: No root location found" << std::endl;
-        return NULL;
-    }
-
-    const LocationConfig *matched_location = NULL;
-    size_t longest_match = 0;
-
-    /// 
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        std::cerr << "Debug: Failed to get current working directory" << std::endl;
-        return NULL;
-    }
-
-    std::string req_directory = request.getPath().substr(0, request.getPath().find_last_of('/'));
-
-    std::string req_path_lower = toLower(std::string(cwd) + req_directory);
-    std::cout << "Debug: Final requested path: " << req_path_lower << std::endl;
-
-    ///
-
-
-    for (size_t loc = 0; loc < server_config.locations.size(); ++loc)
-    {
-        std::string loc_path_lower = toLower(std::string(cwd) + server_config.locations[loc].path); //
-        const std::string &req_path = req_path_lower;
-        std::cout << "Matching request path: " << req_path << " with location path: " << loc_path_lower << std::endl;
-
-        if (req_path.compare(0, loc_path_lower.length(), loc_path_lower) == 0)
-        {
-            // 추가 조건: 정확한 매칭 또는 다음 문자가 '/'
-            if (req_path.length() == loc_path_lower.length() || req_path[loc_path_lower.length()] == '/')
-            {
-                // 가장 긴 매칭 경로를 선택하여 우선순위 처리
-                if (loc_path_lower.length() > longest_match)
-                {
-                    matched_location = &server_config.locations[loc];
-                    longest_match = loc_path_lower.length();
-                    std::cout << "New matched location: " << loc_path_lower << std::endl;
-                }
-            }
-        }
-    }
-    if (matched_location)
-        std::cout << "Final matched location: " << matched_location->path << std::endl;
-    else
-        std::cout << "No matching location found for path: " << request.getPath() << std::endl;
-
-    return matched_location;
-} */
+ */
 
 bool Server::processClientRequest(int client_fd, const ServerConfig &server_config, const std::string &request_str,
                                   int &consumed)
