@@ -99,6 +99,27 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     if (!pathSuccess)
         return createErrorResponse(404, server_config);
 
+    ///check directory request
+    struct stat path_stat;
+    if (stat(real_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
+    {
+        //directory, so check default file
+        if (!location_config.default_file.empty())
+        {
+            std::string default_file_path = real_path + "/" + location_config.default_file;
+            if (stat(default_file_path.c_str(), &path_stat) == 0 && S_ISREG(path_stat.st_mode))
+            {
+                //use existing default file
+                real_path = default_file_path;
+            }
+            else
+                return createErrorResponse(403, server_config); //not sure 404 or 403
+        }
+        else //no default file
+            return createErrorResponse(403, server_config);
+    }
+    ///
+
     bool isCGI = isCGIRequest(real_path, location_config);
     std::cout << "Debug: isCGIRequest bool: " << isCGI << std::endl;
     if (isCGI)

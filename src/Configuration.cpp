@@ -96,6 +96,10 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     {
         iss >> location_config.index;
     }
+    else if (key == "default_file")
+    {
+        iss >> location_config.default_file;
+    }
     else if (key == "cgi_extension")
     {
         iss >> location_config.cgi_extension;
