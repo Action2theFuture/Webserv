@@ -181,28 +181,11 @@ bool isMethodAllowed(const std::string &method, const LocationConfig &location_c
 {
     std::string trimmed_method = trim(method);
 
-    std::cout << "Path : " << location_config.path << std::endl;
-    std::cout << "Request Method: [" << trimmed_method << "]" << std::endl;
-    std::cout << "Allowed Methods: [";
-    for (size_t i = 0; i < location_config.methods.size(); ++i)
-    {
-        std::cout << location_config.methods[i];
-        if (i != location_config.methods.size() - 1)
-        {
-            std::cout << ", ";
-        }
-    }
-    std::cout << "]" << std::endl;
-
     for (size_t i = 0; i < location_config.methods.size(); ++i)
     {
         if (iequals(trimmed_method, location_config.methods[i]))
-        {
-            std::cout << "Method [" << trimmed_method << "] is allowed." << std::endl;
             return true;
-        }
     }
-    std::cout << "Method [" << trimmed_method << "] is NOT allowed." << std::endl;
     return false;
 }
 
@@ -223,7 +206,7 @@ bool getUploadDirectory(const LocationConfig &location_config, const ServerConfi
     if (!ensureDirectoryExists(upload_dir))
     {
         std::string errorMsg = "Failed to ensure upload directory exists: " + upload_dir;
-        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        LogConfig::reportInternalError(errorMsg + ": " + strerror(errno));
         return false;
     }
 
@@ -248,7 +231,7 @@ bool saveUploadedFile(const std::string &upload_dir, const UploadedFile &file, s
     if (!ofs.is_open())
     {
         std::string errorMsg = "Failed to open file for writing: " + file_path;
-        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        LogConfig::reportInternalError(errorMsg + ": " + strerror(errno));
         return false;
     }
 
@@ -269,7 +252,7 @@ bool deleteUploadedFile(const std::string &upload_dir, const std::string &filena
     if (access(filePath.c_str(), F_OK) == -1)
     {
         std::string errorMsg = "File does not exist: " + filePath;
-        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        LogConfig::reportInternalError(errorMsg + ": " + strerror(errno));
         return false;
     }
 
@@ -277,7 +260,7 @@ bool deleteUploadedFile(const std::string &upload_dir, const std::string &filena
     if (remove(filePath.c_str()) != 0)
     {
         std::string errorMsg = "Failed to delete file: " + filePath;
-        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        LogConfig::reportInternalError(errorMsg + ": " + strerror(errno));
         return false;
     }
 
@@ -319,7 +302,7 @@ bool deleteAllUploadedFiles(const std::string &upload_dir)
     else
     {
         std::string errorMsg = "Failed to open directory for deletion: " + upload_dir;
-        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        LogConfig::reportInternalError(errorMsg + ": " + strerror(errno));
         return false;
     }
 }
@@ -353,7 +336,7 @@ bool listUploadedFiles(const std::string &upload_dir, std::vector<std::string> &
     else
     {
         std::string errorMsg = "Failed to open directory: " + upload_dir;
-        LogConfig::logError(errorMsg + ": " + strerror(errno));
+        LogConfig::reportInternalError(errorMsg + ": " + strerror(errno));
         return false;
     }
 }

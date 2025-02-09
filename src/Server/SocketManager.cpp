@@ -5,7 +5,7 @@ int SocketManager::createSocket(int port)
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
     {
-        LogConfig::logError("socket() failed for port " + intToString(port));
+        LogConfig::reportInternalError("socket() failed for port " + intToString(port));
         exit(EXIT_FAILURE);
     }
     return sockfd;
@@ -59,7 +59,7 @@ void SocketManager::bindSocket(int sockfd, int port)
 
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
-        LogConfig::logError("bind() failed for port " + intToString(port));
+        LogConfig::reportInternalError("bind() failed for port " + intToString(port));
         close(sockfd);
         exit(EXIT_FAILURE);
     }
@@ -69,7 +69,7 @@ void SocketManager::startListening(int sockfd, int port)
 {
     if (listen(sockfd, SOMAXCONN) < 0)
     {
-        LogConfig::logError("listen() failed for port " + intToString(port));
+        LogConfig::reportInternalError("listen() failed for port " + intToString(port));
         close(sockfd);
         exit(EXIT_FAILURE);
     }

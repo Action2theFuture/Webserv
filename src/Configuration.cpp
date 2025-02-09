@@ -181,7 +181,6 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
 
 bool Configuration::parseConfigFile(const std::string &filename)
 {
-    std::cerr << "[DEBUG] parseConfigFile: " << filename << std::endl;
     std::ifstream file(filename.c_str());
     if (!file.is_open())
     {

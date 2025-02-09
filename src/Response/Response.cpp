@@ -82,10 +82,6 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
-    std::cout << "Debug: path in beginning: " << std::endl;
-
-    std::cout << "Request Path : " << path << std::endl;
-
     bool isMethodValid = validateMethod(request, location_config);
     if (!isMethodValid)
         return handleMethodNotAllowed(location_config, server_config);
@@ -95,55 +91,17 @@ Response Response::createResponse(const Request &request, const LocationConfig &
 
     std::string real_path;
     bool pathSuccess = getRealPath(path, location_config, server_config, real_path);
-    std::cout << "Real Path : " << real_path << std::endl;
     if (!pathSuccess)
         return createErrorResponse(404, server_config);
-
-    ///check directory request
-    struct stat path_stat;
-    if (stat(real_path.c_str(), &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
-    {
-        //directory, so check default file
-        if (!location_config.default_file.empty())
-        {
-            std::string default_file_path = real_path + "/" + location_config.default_file;
-            if (stat(default_file_path.c_str(), &path_stat) == 0 && S_ISREG(path_stat.st_mode))
-            {
-                //use existing default file
-                real_path = default_file_path;
-            }
-            else
-                return createErrorResponse(403, server_config); //not sure 404 or 403
-        }
-        else //no default file
-            return createErrorResponse(403, server_config);
-    }
-    ///
-
     bool isCGI = isCGIRequest(real_path, location_config);
-    std::cout << "Debug: isCGIRequest bool: " << isCGI << std::endl;
     if (isCGI)
         return handleCGI(request, real_path, server_config);
-
-    std::cout << "Debug: -- after checking isCGI" << std::endl;
-    std::cout << "Debug: path = " << std::endl;
     if (path == "/upload" && iequals(method, "post"))
-    {
-        std::cout << "Request Path in condition : " << path << std::endl;
         return handleUpload(real_path, request, location_config, server_config);
-    }
-
     if (path == "/filelist")
-    {
-        std::cout << "Request Path in condition : " << path << std::endl;
         return handleFileList(request, location_config, server_config);
-    }
-
     if (path == "/filelist/all" && iequals(method, "DELETE"))
-    {
-        std::cout << "Request Path in condition : " << path << std::endl;
         return handleDeleteAllFiles(location_config, server_config);
-    }
     return handleStaticFile(real_path, server_config);
 }
 
@@ -163,7 +121,7 @@ bool Response::validateMethod(const Request &request, const LocationConfig &loca
 
     // 메서드가 허용되지 않음
     std::string errorMsg = "Method not allowed: " + method;
-    LogConfig::logError(errorMsg);
+    LogConfig::reportInternalError(errorMsg);
     return false;
 }
 
@@ -188,10 +146,7 @@ bool Response::isCGIRequest(const std::string &real_path, const LocationConfig &
     {
         std::string ext = real_path.substr(real_path.size() - location_config.cgi_extension.size());
         if (iequals(ext, location_config.cgi_extension))
-        {
-            std::cout << "CGI request detected." << std::endl;
             return true;
-        }
     }
     return false;
 }
@@ -204,7 +159,7 @@ std::string Response::readErrorPageFromFile(const std::string &file_path, int st
         // 파일 열기 실패
         std::stringstream ss;
         ss << "Error " << status << " (Failed to open file: " << file_path << ")";
-        LogConfig::logError("(Failed to open file" + file_path + ": " + strerror(errno));
+        LogConfig::reportInternalError("(Failed to open file" + file_path + ": " + strerror(errno));
         return ss.str(); // 에러 메시지 반환
     }
 
@@ -221,7 +176,7 @@ std::string Response::readErrorPageFromFile(const std::string &file_path, int st
     {
         std::stringstream ss;
         ss << "Error " << status << " (Failed to read file: " << file_path << ")";
-        LogConfig::logError("(Failed to read file" + file_path + ": " + strerror(errno));
+        LogConfig::reportInternalError("(Failed to read file" + file_path + ": " + strerror(errno));
         return ss.str();
     }
 
@@ -255,9 +210,8 @@ Response Response::createErrorResponse(const int status, const ServerConfig &ser
     {
         // 키가 없음 -> 기본 메시지
         std::stringstream ss;
-        ss << "Error " << status << " (No error page found in server_config)";
-        LogConfig::logError("(No error page found in server_config) / status : " + intToString(status) + ": " +
-                            strerror(errno));
+        LogConfig::reportInternalError("(No error page found in server_config) / status : " + intToString(status) +
+                                       ": " + strerror(errno));
         std::string default_error = ss.str();
         res.setBody(default_error);
 
@@ -276,6 +230,6 @@ Response Response::createErrorResponse(const int status, const ServerConfig &ser
         ss_len << file_content.size();
         res.setHeader("Content-Length", ss_len.str());
     }
-    LogConfig::logError(status_text + ": " + strerror(errno));
+    LogConfig::reportError(status, status_text);
     return res;
 }
