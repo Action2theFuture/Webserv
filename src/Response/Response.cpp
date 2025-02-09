@@ -93,6 +93,7 @@ Response Response::createResponse(const Request &request, const LocationConfig &
 
     std::string real_path;
     bool pathSuccess = getRealPath(path, location_config, server_config, real_path);
+    std::cout << "Real Path : " << real_path << std::endl;
     if (!pathSuccess)
         return createErrorResponse(404, server_config);
 

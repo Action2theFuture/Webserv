@@ -6,24 +6,26 @@ namespace ResponseUtils
 // What To do (1 / 23)
 // To ensure that the path is only called with the get method when fetching and executing a static file, you can use
 // the
-std::string buildRequestedPath(const std::string &path, const LocationConfig &location_config,
+std::string buildRequestedPath(const std::string &original_path, const LocationConfig &location_config,
                                const ServerConfig &server_config)
 {
     std::string requested_path;
 
+    std::cerr << "path : " << original_path << std::endl;
+    std::string path = normalizePath(original_path);
     if (path == "/")
     {
         // root + index
         if (!location_config.root.empty())
         {
-	     if (location_config.root[location_config.root.size() - 1] == '/')
+            if (location_config.root[location_config.root.size() - 1] == '/')
                 requested_path = location_config.root + location_config.index;
             else
                 requested_path = location_config.root + "/" + location_config.index;
         }
         else if (!server_config.root.empty())
         {
-	    if (server_config.root[server_config.root.size() - 1] == '/')
+            if (server_config.root[server_config.root.size() - 1] == '/')
                 requested_path = server_config.root + location_config.index;
             else
                 requested_path = server_config.root + "/" + location_config.index;
@@ -36,21 +38,20 @@ std::string buildRequestedPath(const std::string &path, const LocationConfig &lo
     else
     {
         // root + path
-        std::cerr << "path : " << path << std::endl;
         // Check if the requested path exactly matches the location path
         if (path == location_config.path && !location_config.index.empty())
         {
             // root + index (for exact location match)
             if (!location_config.root.empty())
             {
-	        if (location_config.root[location_config.root.size() - 1] == '/')
+                if (location_config.root[location_config.root.size() - 1] == '/')
                     requested_path = location_config.root + location_config.index;
                 else
                     requested_path = location_config.root + "/" + location_config.index;
             }
             else if (!server_config.root.empty())
             {
-	        if (server_config.root[server_config.root.size() - 1] == '/')
+                if (server_config.root[server_config.root.size() - 1] == '/')
                     requested_path = server_config.root + location_config.index;
                 else
                     requested_path = server_config.root + "/" + location_config.index;
@@ -65,14 +66,14 @@ std::string buildRequestedPath(const std::string &path, const LocationConfig &lo
             // root + path
             if (!location_config.root.empty())
             {
-	        if (location_config.root[location_config.root.size() - 1] == '/')
+                if (location_config.root[location_config.root.size() - 1] == '/')
                     requested_path = location_config.root + path.substr(location_config.path.length());
                 else
                     requested_path = location_config.root + "/" + path.substr(location_config.path.length());
             }
             else if (!server_config.root.empty())
             {
-	        if (server_config.root[server_config.root.size() - 1] == '/')
+                if (server_config.root[server_config.root.size() - 1] == '/')
                     requested_path = server_config.root + path;
                 else
                     requested_path = server_config.root + "/" + path;
@@ -86,7 +87,7 @@ std::string buildRequestedPath(const std::string &path, const LocationConfig &lo
 
     // 경로 정규화 (필요 시)
     requested_path = normalizePath(requested_path);
-    std::cerr << "requeted path : " << requested_path << std::endl;
+    std::cerr << "requested path : " << requested_path << std::endl;
 
     return requested_path;
 }
