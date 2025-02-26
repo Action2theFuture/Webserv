@@ -1,4 +1,8 @@
 #include "CGIHandler.hpp"
+#include "Log.hpp"
+#include "Request.hpp"
+#include "Response.hpp"
+#include "Utils.hpp"
 
 CGIHandler::CGIHandler()
 {
