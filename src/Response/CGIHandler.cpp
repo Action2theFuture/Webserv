@@ -1,8 +1,4 @@
 #include "CGIHandler.hpp"
-#include "Log.hpp"
-#include "Request.hpp"
-#include "Response.hpp"
-#include "Utils.hpp"
 
 CGIHandler::CGIHandler()
 {
@@ -88,8 +84,7 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
         setEnvironmentVariables(request, script_path);
 
         // CGI 프로그램 실행 (Python 스크립트)
-        execl("/usr/bin/python3", "python3", script_path.c_str(), NULL);
-
+        execl(PYTHON_PATH, "python", script_path.c_str(), NULL);
         // execve 실패 시 종료
         perror("execl");
         LogConfig::reportInternalError("Exec failed: " + std::string(strerror(errno)));

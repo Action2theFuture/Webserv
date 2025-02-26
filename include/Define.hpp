@@ -15,5 +15,6 @@
 #define INTERNAL_SERVER_ERROR_500 "500 Internal Server Error"
 #define MAX_EVENTS 1024
 #define BUFFER_SIZE 4096
+#define PYTHON_PATH "/usr/bin/python3"
 
 #endif // DEFINE_HPP
