@@ -1,12 +1,6 @@
 #ifndef CGIHANDLER_HPP
 #define CGIHANDLER_HPP
 
-#include "Define.hpp"
-#include "Log.hpp"
-#include "Request.hpp"
-#include "Response.hpp"
-#include "Utils.hpp"
-
 #include <cstdlib>
 #include <cstring>
 #include <errno.h> // errno
