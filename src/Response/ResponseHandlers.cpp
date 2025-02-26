@@ -21,6 +21,13 @@ Response handleRedirection(const LocationConfig &location_config)
 
 Response handleCGI(const Request &request, const std::string &real_path, const ServerConfig &server_config)
 {
+    struct stat buffer;
+    if (stat(real_path.c_str(), &buffer) != 0)
+    {
+        LogConfig::reportInternalError("Resource not available: " + std::string(strerror(errno)));
+        return Response::createErrorResponse(404, server_config);
+    }
+
     Response res;
     CGIHandler cgi_handler;
     std::string cgi_output, cgi_content_type;
@@ -52,7 +59,7 @@ Response handleCGI(const Request &request, const std::string &real_path, const S
                 res.setHeader(key, value);
             }
         }
-        res.setStatus("200 OK");
+        res.setStatus("200 SUCCESS");
         res.setBody(body);
 
         std::stringstream ss_len;
@@ -74,6 +81,7 @@ Response handleCGI(const Request &request, const std::string &real_path, const S
         res.setHeader("Content-Length", ss_len.str());
         res.setHeader("Content-Type", "text/html");
     }
+    LogConfig::reportSuccess(200, SUCCESS_200);
     return res;
 }
 
@@ -111,7 +119,7 @@ Response handleStaticFile(const std::string &real_path, const ServerConfig &serv
         res.setHeader("Content-Length", ss_len.str());
     }
     res.setHeader("Content-Type", content_type);
-
+    LogConfig::reportSuccess(200, SUCCESS_200);
     return res;
 }
 
@@ -126,7 +134,7 @@ Response handleUpload(const std::string &real_path, const Request &request, cons
 
     if (!validateUploadedFiles(files))
     {
-        std::cerr << "Uploaded files are empty" << std::endl;
+        LogConfig::reportInternalError("Uploaded files are empty");
         res = Response::createErrorResponse(400, server_config); // Bad Request
         return res;
     }
@@ -159,7 +167,7 @@ Response handleUpload(const std::string &real_path, const Request &request, cons
         if (!isFileExtensionAllowed(sanitized_filename, allowed_extensions))
         {
             std::string errorMsg = "Disallowed extensions: File Name: " + sanitized_filename;
-            LogConfig::logError(errorMsg);
+            LogConfig::reportInternalError(errorMsg);
             return Response::createErrorResponse(400, server_config); // Bad Request
         }
 
@@ -186,7 +194,7 @@ Response handleFileList(const Request &request, const LocationConfig &location_c
     else
     {
         std::string errorMsg = "Unsupported HTTP method: " + method;
-        LogConfig::logError(errorMsg);
+        LogConfig::reportInternalError(errorMsg);
         return Response::createErrorResponse(400, server_config);
     }
 }
@@ -225,7 +233,7 @@ Response handleDeleteFile(const Request &request, const LocationConfig &location
     if (queryParams.find("filename") == queryParams.end())
     {
         std::string errorMsg = "filename parameter in DELETE is required.";
-        LogConfig::logError(errorMsg);
+        LogConfig::reportInternalError(errorMsg);
         return Response::createErrorResponse(400, server_config);
     }
 
@@ -235,7 +243,7 @@ Response handleDeleteFile(const Request &request, const LocationConfig &location
     if (!isValidFilename(sanitized_filename))
     {
         std::string errorMsg = "Invalid filename: " + sanitized_filename;
-        LogConfig::logError(errorMsg);
+        LogConfig::reportInternalError(errorMsg);
         return Response::createErrorResponse(400, server_config);
     }
 
@@ -287,7 +295,7 @@ Response handleMethodNotAllowed(const LocationConfig &location_config, const Ser
         }
     }
     res.setHeader("Allow", allow_methods);
-    std::cout << "Method not allowed. Returning 405." << std::endl;
+    LogConfig::reportError(405, METHOD_NOT_ALLOWED_405);
     return res;
 }
 

@@ -50,7 +50,7 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
     if (pipe(pipefd) == -1)
     {
         perror("pipe");
-        LogConfig::logError("Pipe creation failed: " + std::string(strerror(errno)));
+        LogConfig::reportInternalError("Pipe creation failed: " + std::string(strerror(errno)));
         return false;
     }
 
@@ -59,7 +59,7 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
     {
         // fork 실패
         perror("fork");
-        LogConfig::logError("Fork failed: " + std::string(strerror(errno)));
+        LogConfig::reportInternalError("Fork failed: " + std::string(strerror(errno)));
         close(pipefd[0]);
         close(pipefd[1]);
         return false;
@@ -85,10 +85,9 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
 
         // CGI 프로그램 실행 (Python 스크립트)
         execl(PYTHON_PATH, "python", script_path.c_str(), NULL);
-
         // execve 실패 시 종료
         perror("execl");
-        LogConfig::logError("Exec failed: " + std::string(strerror(errno)));
+        LogConfig::reportInternalError("Exec failed: " + std::string(strerror(errno)));
         exit(EXIT_FAILURE);
     }
     else
@@ -111,7 +110,7 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
         if (bytes_read == -1)
         {
             perror("read");
-            LogConfig::logError("Read failed: " + std::string(strerror(errno)));
+            LogConfig::reportInternalError("Read failed: " + std::string(strerror(errno)));
             close(pipefd[0]);
             return false;
         }

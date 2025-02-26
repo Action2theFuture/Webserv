@@ -96,6 +96,10 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     {
         iss >> location_config.index;
     }
+    else if (key == "default_file")
+    {
+        iss >> location_config.default_file;
+    }
     else if (key == "cgi_extension")
     {
         iss >> location_config.cgi_extension;
@@ -177,7 +181,6 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
 
 bool Configuration::parseConfigFile(const std::string &filename)
 {
-    std::cerr << "[DEBUG] parseConfigFile: " << filename << std::endl;
     std::ifstream file(filename.c_str());
     if (!file.is_open())
     {

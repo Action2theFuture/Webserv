@@ -3,12 +3,10 @@
 // Server 클래스 생성자
 Server::Server(const std::string &configFile) : poller(NULL)
 {
-    std::cerr << "[DEBUG] Server ctor configFile: " << configFile << std::endl;
-
     Configuration config;
     if (!config.parseConfigFile(configFile))
     {
-        LogConfig::logError("Failed to parse configuration file.");
+        LogConfig::reportInternalError("Failed to parse configuration file.");
         exit(EXIT_FAILURE);
     }
 
@@ -64,7 +62,7 @@ void Server::start()
         std::vector<Event> events;
         if (!processPollerEvents(events))
         {
-            LogConfig::logError("Failed to poll events.");
+            LogConfig::reportInternalError("Failed to poll events.");
             continue;
         }
         processEvents(events);
@@ -77,7 +75,7 @@ bool Server::processPollerEvents(std::vector<Event> &events)
     int n = poller->poll(events, -1);
     if (n == -1)
     {
-        LogConfig::logError("poller->poll() failed: " + std::string(strerror(errno)));
+        LogConfig::reportInternalError("poller->poll() failed: " + std::string(strerror(errno)));
         return false;
     }
     return true;
@@ -92,7 +90,7 @@ void Server::processEvents(const std::vector<Event> &events)
 
         if (fd < 0)
         {
-            LogConfig::logError("Invalid file descriptor in events[" + intToString(i) + "]");
+            LogConfig::reportInternalError("Invalid file descriptor in events[" + intToString(i) + "]");
             continue;
         }
 
@@ -124,20 +122,20 @@ void Server::handleNewConnection(int server_fd)
     int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
     if (client_fd == -1)
     {
-        LogConfig::logError("accept() failed: " + std::string(strerror(errno)));
+        LogConfig::reportInternalError("accept() failed: " + std::string(strerror(errno)));
         return;
     }
 
     if (!setNonBlocking(client_fd))
     {
-        LogConfig::logError("Failed to set non-blocking mode for client_fd " + intToString(client_fd));
+        LogConfig::reportInternalError("Failed to set non-blocking mode for client_fd " + intToString(client_fd));
         close(client_fd);
         return;
     }
 
     if (!poller->add(client_fd, POLLER_READ))
     {
-        LogConfig::logError("Failed to add client_fd " + intToString(client_fd) + " to poller");
+        LogConfig::reportInternalError("Failed to add client_fd " + intToString(client_fd) + " to poller");
         close(client_fd);
     }
 }
@@ -316,36 +314,22 @@ void Server::safelyCloseClient(int client_fd)
 
 const LocationConfig *matchLocationConfig(const Request &request, const ServerConfig &server_config)
 {
+    std::string req_path = request.getPath();
     const LocationConfig *matched_location = NULL;
     size_t longest_match = 0;
-    std::string req_path_lower = toLower(request.getPath());
 
     for (size_t loc = 0; loc < server_config.locations.size(); ++loc)
     {
-        std::string loc_path_lower = toLower(server_config.locations[loc].path);
-        const std::string &req_path = req_path_lower;
-        std::cout << "Matching request path: " << req_path << " with location path: " << loc_path_lower << std::endl;
-
-        if (req_path.compare(0, loc_path_lower.length(), loc_path_lower) == 0)
+        std::string loc_path = server_config.locations[loc].path;
+        if (req_path.compare(0, loc_path.length(), loc_path) == 0)
         {
-            // 추가 조건: 정확한 매칭 또는 다음 문자가 '/'
-            if (req_path.length() == loc_path_lower.length() || req_path[loc_path_lower.length()] == '/')
+            if (loc_path.length() > longest_match)
             {
-                // 가장 긴 매칭 경로를 선택하여 우선순위 처리
-                if (loc_path_lower.length() > longest_match)
-                {
-                    matched_location = &server_config.locations[loc];
-                    longest_match = loc_path_lower.length();
-                    std::cout << "New matched location: " << loc_path_lower << std::endl;
-                }
+                matched_location = &server_config.locations[loc];
+                longest_match = loc_path.length();
             }
         }
     }
-    if (matched_location)
-        std::cout << "Final matched location: " << matched_location->path << std::endl;
-    else
-        std::cout << "No matching location found for path: " << request.getPath() << std::endl;
-
     return matched_location;
 }
 
@@ -373,7 +357,7 @@ bool Server::processClientRequest(int client_fd, const ServerConfig &server_conf
     const LocationConfig *matched_location = matchLocationConfig(request, server_config);
     if (matched_location == NULL)
     {
-        std::cerr << "No matching location found for path: " << request.getPath() << std::endl;
+        LogConfig::reportInternalError("No matching location found for path: " + request.getPath());
         Response res = Response::createErrorResponse(404, server_config);
         sendResponse(client_fd, res);
         return false;
@@ -398,8 +382,8 @@ void Server::sendResponse(int client_fd, const Response &response)
         if (sent == -1)
         {
             // C++98 방식으로 숫자 변환
-            std::cerr << "send() failed for client_fd " << client_fd << ": " << strerror(errno) << std::endl;
-            LogConfig::logError("send() failed for client_fd " + intToString(client_fd) + ": " + strerror(errno));
+            LogConfig::reportInternalError("send() failed for client_fd " + intToString(client_fd) + ": " +
+                                           strerror(errno));
             break;
         }
         total_sent += sent;
