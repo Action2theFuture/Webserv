@@ -36,8 +36,5 @@
 .DS_Store
 
 logs
-<<<<<<< HEAD
 uploads
-=======
 *.swp
->>>>>>> main

@@ -8,6 +8,7 @@ CPP = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++98
 IFLAGS = -I ./include/
 
+LOG_DIR = logs
 SRC_DIR = src
 OBJ_DIR = obj
 SERVER_DIR = $(SRC_DIR)/Server
@@ -58,6 +59,7 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
+	rm -rf $(LOG_DIR)
 
 re: fclean all
 
