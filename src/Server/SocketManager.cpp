@@ -60,7 +60,7 @@ void SocketManager::startListening(int sockfd, int port)
 
 bool SocketManager::readFromSocketOnce(int client_socket, std::string &data)
 {
-    char buf[4096];
+    char buf[BUFFER_SIZE];
     ssize_t ret = recv(client_socket, buf, sizeof(buf), 0);
     if (ret > 0)
     {

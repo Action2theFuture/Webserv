@@ -1,4 +1,5 @@
 #include "Response.hpp"
+#include "Define.hpp"
 #include "ResponseHandlers.hpp"
 #include "ResponseUtils.hpp"
 #include <iostream>
@@ -78,20 +79,24 @@ Response Response::buildResponse(const Request &request, const ServerConfig &ser
 Response Response::createResponse(const Request &request, const LocationConfig &location_config,
                                   const ServerConfig &server_config)
 {
+
+    std::string method = request.getMethod();
+    std::string path = request.getPath();
+
     if (!ResponseHandler::validateMethod(request, location_config))
         return ResponseHandler::handleMethodNotAllowed(location_config, server_config);
     if (!location_config.redirect.empty())
         return ResponseHandler::handleRedirection(location_config);
     std::string real_path;
-    if (!getRealPath(request.getPath(), location_config, server_config, real_path))
+    if (!getRealPath(path, location_config, server_config, real_path))
         return createErrorResponse(404, server_config);
     if (ResponseHandler::isCGIRequest(real_path, location_config))
         return ResponseHandler::handleCGI(request, real_path, server_config);
-    if (request.getPath() == "/upload" && iequals(request.getMethod(), "post"))
+    if (path == "/upload" && iequals(method, "post"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
-    if (request.getPath() == "/filelist")
+    if (path == "/filelist")
         return ResponseHandler::handleFileList(request, location_config, server_config);
-    if (request.getPath() == "/filelist/all" && iequals(request.getMethod(), "DELETE"))
+    if (path == "/filelist/all" && iequals(method, "delete"))
         return ResponseHandler::handleDeleteAllFiles(location_config, server_config);
     return ResponseHandler::handleStaticFile(real_path, server_config);
 }
@@ -123,9 +128,9 @@ std::string Response::readErrorPageFromFile(const std::string &file_path, int st
         return ss.str();
     }
     std::string file_content;
-    char buffer[4096];
+    char buffer[BUFFER_SIZE];
     ssize_t bytes_read;
-    while ((bytes_read = read(fd, buffer, 4096)) > 0)
+    while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
     {
         file_content.append(buffer, bytes_read);
     }

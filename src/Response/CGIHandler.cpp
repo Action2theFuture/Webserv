@@ -76,7 +76,7 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
     else
     {
         close(pipefd[1]);
-        char buffer[4096];
+        char buffer[BUFFER_SIZE];
         ssize_t bytes_read;
         while ((bytes_read = read(pipefd[0], buffer, sizeof(buffer))) > 0)
         {

@@ -35,10 +35,6 @@ bool Server::processClientRequest(int client_fd, const ServerConfig &server_conf
     if (!request.parse(request_str, consumed, isPartial))
     {
         sendBadRequestResponse(client_fd, server_config);
-        safelyCloseClient(client_fd);
-        _requestMap.erase(client_fd);
-        _partialRequests.erase(client_fd);
-        _outgoingData.erase(client_fd);
         return false;
     }
     if (isPartial)
@@ -54,19 +50,11 @@ bool Server::processClientRequest(int client_fd, const ServerConfig &server_conf
         Response res = Response::createErrorResponse(404, server_config);
         res.setHeader("Connection", "close");
         sendResponse(client_fd, res);
-        safelyCloseClient(client_fd);
-        _requestMap.erase(client_fd);
-        _partialRequests.erase(client_fd);
-        _outgoingData.erase(client_fd);
         return false;
     }
     Response res = Response::buildResponse(request, server_config, matched_location);
     res.setHeader("Connection", "close");
     sendResponse(client_fd, res);
-    safelyCloseClient(client_fd);
-    _requestMap.erase(client_fd);
-    _partialRequests.erase(client_fd);
-    _outgoingData.erase(client_fd);
     consumed = request_str.size();
     return true;
 }

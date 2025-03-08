@@ -44,6 +44,7 @@ endif
 OBJS := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 all: $(NAME)
+	@ulimit -S -n 65536
 
 $(NAME): $(OBJS)
 	$(CPP) $(CFLAGS) -o $@ $(OBJS)

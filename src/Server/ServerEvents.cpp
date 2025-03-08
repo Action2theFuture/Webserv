@@ -33,6 +33,8 @@ void Server::handleNewConnection(int server_fd)
     int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
     if (client_fd == -1)
     {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return;
         LogConfig::reportInternalError("accept() failed: " + std::string(strerror(errno)));
         return;
     }
@@ -60,8 +62,6 @@ void Server::handleClientRead(int client_fd, const ServerConfig &server_config)
     }
     if (!handleReceivedData(client_fd, server_config, buffer))
     {
-        safelyCloseClient(client_fd);
-        _partialRequests.erase(client_fd);
         return;
     }
 }
@@ -101,16 +101,43 @@ bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config
     while (true)
     {
         int consumed = 0;
-        if (!processClientRequest(client_fd, server_config, buffer, consumed))
-            return false;
-        else if (consumed == 0)
+        bool ok = processClientRequest(client_fd, server_config, buffer, consumed);
+        if (!ok)
+        {
+            // 에러 응답 or 즉시 닫아야 할 경우
             break;
+        }
+        else if (consumed == 0)
+        {
+            // partial → 더 수신 필요 or 추가 요청 없음
+            break;
+        }
         else
         {
+            // 제대로 한 요청 분량을 처리했으므로, 그만큼 지운다.
             buffer.erase(0, consumed);
+            // 비워졌으면 추가 요청 없음
             if (buffer.empty())
                 break;
         }
     }
+    if (_partialRequests.find(client_fd) != _partialRequests.end())
+    {
+        // 만약 close가 필요한 상황이면(응답 끝), safelyCloseClient
+        // → 예: processClientRequest가 false 반환 시
+        //       => break로 넘어왔을 때 close
+        //       => map erase
+        safelyCloseClient(client_fd);
+        _partialRequests.erase(client_fd);
+    }
+
+    if (_requestMap.find(client_fd) != _requestMap.end())
+        _requestMap.erase(client_fd);
+
+    if (_outgoingData.find(client_fd) != _outgoingData.end())
+        _outgoingData.erase(client_fd);
+
+    // 최종적으로 handleClientRead가 false 반환 시 상위에서 뭔가 할 수도 있지만,
+    // 여기서는 true로 반환 (더 이상 읽을게 없다는 뜻)
     return true;
 }

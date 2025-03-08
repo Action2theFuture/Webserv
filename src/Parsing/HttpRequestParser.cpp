@@ -41,10 +41,14 @@ bool Parser::parse(const std::string &data, ParsedRequest &req)
         return true;
     }
     req.body = data.substr(offset, content_length);
+
+    // 디버그: Content-Type 값 출력
     if (req.headers.find("Content-Type") != req.headers.end())
     {
         std::string ct = req.headers["Content-Type"];
-        if (ct.find("multipart/form-data") != std::string::npos)
+        // 대소문자 무시, 앞뒤 공백 제거
+        std::string ct_lower = toLower(trim(ct));
+        if (ct_lower.find("multipart/form-data") != std::string::npos)
         {
             std::string boundary;
             if (!extractBoundary(ct, boundary))

@@ -15,16 +15,10 @@ bool Parser::parseMultipartFormData(const std::string &body, const std::string &
         if (pos + 2 <= body_length && body.compare(pos, 2, "\r\n") == 0)
             pos += 2;
         else
-        {
-            std::cerr << "Missing CRLF after boundary." << std::endl;
             return false;
-        }
         size_t headers_end = body.find("\r\n\r\n", pos);
         if (headers_end == std::string::npos)
-        {
-            std::cerr << "Headers not found in multipart." << std::endl;
             return false;
-        }
         std::string part_headers_str = body.substr(pos, headers_end - pos);
         pos = headers_end + 4;
         std::map<std::string, std::string> part_headers;
