@@ -15,9 +15,9 @@ void LogConfig::printColoredMessage(const std::string &message, const char *time
 
 std::string LogConfig::getCurrentTimeStr()
 {
-    std::time_t now = std::time(nullptr);
+    time_t now = time(NULL);
     char buffer[100];
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localtime(&now));
     return std::string(buffer);
 }
 
@@ -113,7 +113,7 @@ void LogConfig::reportSuccess(int status, const std::string &message)
         {
             std::cerr << WHITE_COLOR << "[" << time_str << "] Error: Failed to create log file "
                       << STATUS_SUCCESS_LOG_FILE << RESET_COLOR << std::endl;
-            printColoredMessage("Status: " + std::to_string(status) + ", Message: " + message, time_str.c_str(),
+            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(),
                                 GREEN_COLOR);
             return;
         }
@@ -123,7 +123,7 @@ void LogConfig::reportSuccess(int status, const std::string &message)
         {
             std::cerr << WHITE_COLOR << "[" << time_str << "] Error: Failed to open newly created log file "
                       << STATUS_SUCCESS_LOG_FILE << RESET_COLOR << std::endl;
-            printColoredMessage("Status: " + std::to_string(status) + ", Message: " + message, time_str.c_str(),
+            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(),
                                 GREEN_COLOR);
             return;
         }
@@ -135,7 +135,7 @@ void LogConfig::reportSuccess(int status, const std::string &message)
     log_file.close();
 
     // 성공 로그는 초록색으로 콘솔에 출력
-    printColoredMessage("Status: " + std::to_string(status) + ", Message: " + message, time_str.c_str(), GREEN_COLOR);
+    printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), GREEN_COLOR);
 }
 
 void LogConfig::reportError(int status, const std::string &message)
@@ -158,7 +158,7 @@ void LogConfig::reportError(int status, const std::string &message)
                 color = RED_COLOR;
             else if (status >= 400 && status < 500)
                 color = YELLOW_COLOR;
-            printColoredMessage("Status: " + std::to_string(status) + ", Message: " + message, time_str.c_str(), color);
+            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), color);
             return;
         }
         create_file.close();
@@ -172,7 +172,7 @@ void LogConfig::reportError(int status, const std::string &message)
                 color = RED_COLOR;
             else if (status >= 400 && status < 500)
                 color = YELLOW_COLOR;
-            printColoredMessage("Status: " + std::to_string(status) + ", Message: " + message, time_str.c_str(), color);
+            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), color);
             return;
         }
     }
@@ -189,16 +189,14 @@ void LogConfig::reportError(int status, const std::string &message)
     else if (status >= 400 && status < 500)
         color = YELLOW_COLOR;
 
-    printColoredMessage("Status: " + std::to_string(status) + ", Message: " + message, time_str.c_str(), color);
+    printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), color);
 }
 
 void LogConfig::reportInternalError(const std::string &message)
 {
     ensureLogDirectoryExists();
 
-    std::time_t now = std::time(nullptr);
-    char time_str[100];
-    std::strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+    std::string time_str = getCurrentTimeStr();
 
     std::ofstream log_file(INTERNAL_ERROR_LOG_FILE, std::ios::app);
     if (!log_file.is_open())
@@ -208,7 +206,7 @@ void LogConfig::reportInternalError(const std::string &message)
         {
             std::cerr << WHITE_COLOR << "[" << time_str << "] Error: Failed to create log file "
                       << INTERNAL_ERROR_LOG_FILE << RESET_COLOR << std::endl;
-            printColoredMessage(message, time_str, MAGENTA_COLOR);
+            printColoredMessage(message, time_str.c_str(), MAGENTA_COLOR);
             return;
         }
         create_file.close();
@@ -217,7 +215,7 @@ void LogConfig::reportInternalError(const std::string &message)
         {
             std::cerr << WHITE_COLOR << "[" << time_str << "] Error: Failed to open newly created log file "
                       << INTERNAL_ERROR_LOG_FILE << RESET_COLOR << std::endl;
-            printColoredMessage(message, time_str, MAGENTA_COLOR);
+            printColoredMessage(message, time_str.c_str(), MAGENTA_COLOR);
             return;
         }
     }
@@ -227,7 +225,7 @@ void LogConfig::reportInternalError(const std::string &message)
     log_file.close();
 
     // 콘솔에 보라색(MAGENTA)으로 내부 에러 메시지 출력
-    printColoredMessage("INTERNAL ERROR: " + message, time_str, MAGENTA_COLOR);
+    printColoredMessage("INTERNAL ERROR: " + message, time_str.c_str(), MAGENTA_COLOR);
 }
 
 void LogConfig::ensureLogDirectoryExists()
