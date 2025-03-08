@@ -11,7 +11,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-// handleRedirection
 Response ResponseHandler::handleRedirection(const LocationConfig &location_config)
 {
     Response res;
@@ -26,7 +25,6 @@ Response ResponseHandler::handleRedirection(const LocationConfig &location_confi
     return res;
 }
 
-// handleCGI
 Response ResponseHandler::handleCGI(const Request &request, const std::string &real_path,
                                     const ServerConfig &server_config)
 {
@@ -81,7 +79,6 @@ Response ResponseHandler::handleCGI(const Request &request, const std::string &r
     return res;
 }
 
-// handleStaticFile
 Response ResponseHandler::handleStaticFile(const std::string &real_path, const ServerConfig &server_config)
 {
     Response res;
@@ -113,7 +110,6 @@ Response ResponseHandler::handleStaticFile(const std::string &real_path, const S
     return res;
 }
 
-// handleUpload (unused parameters are marked to avoid warnings)
 Response ResponseHandler::handleUpload(const std::string &real_path, const Request &request,
                                        const LocationConfig &location_config, const ServerConfig &server_config)
 {
@@ -153,7 +149,6 @@ Response ResponseHandler::handleUpload(const std::string &real_path, const Reque
     return handleStaticFile(real_path, server_config);
 }
 
-// handleFileList
 Response ResponseHandler::handleFileList(const Request &request, const LocationConfig &location_config,
                                          const ServerConfig &server_config)
 {
@@ -169,7 +164,6 @@ Response ResponseHandler::handleFileList(const Request &request, const LocationC
     }
 }
 
-// handleDeleteFile
 Response ResponseHandler::handleDeleteFile(const Request &request, const LocationConfig &location_config,
                                            const ServerConfig &server_config)
 {
@@ -197,7 +191,6 @@ Response ResponseHandler::handleDeleteFile(const Request &request, const Locatio
     return res;
 }
 
-// handleDeleteAllFiles
 Response ResponseHandler::handleDeleteAllFiles(const LocationConfig &location_config, const ServerConfig &server_config)
 {
     if (!ResponseUtil::deleteAllUploadedFiles(location_config.upload_directory))
@@ -211,7 +204,6 @@ Response ResponseHandler::handleDeleteAllFiles(const LocationConfig &location_co
     return res;
 }
 
-// handleGetFileList
 Response ResponseHandler::handleGetFileList(const LocationConfig &location_config, const ServerConfig &server_config)
 {
     std::vector<std::string> files;
@@ -226,7 +218,6 @@ Response ResponseHandler::handleGetFileList(const LocationConfig &location_confi
     return res;
 }
 
-// handleMethodNotAllowed
 Response ResponseHandler::handleMethodNotAllowed(const LocationConfig &location_config,
                                                  const ServerConfig &server_config)
 {

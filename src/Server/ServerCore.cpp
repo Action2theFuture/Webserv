@@ -42,7 +42,6 @@ void Server::initSockets()
     {
         ServerConfig &server = _server_configs[i];
         int sockfd = SocketManager::createSocket(server.port);
-        SocketManager::setSocketOptions(sockfd, server.port);
         SocketManager::setSocketNonBlocking(sockfd, server.port);
         SocketManager::bindSocket(sockfd, server.port);
         SocketManager::startListening(sockfd, server.port);

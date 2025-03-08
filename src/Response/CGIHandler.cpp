@@ -62,9 +62,15 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
         }
         close(pipefd[1]);
         setEnvironmentVariables(request, script_path);
-        execl(PYTHON_PATH, "python", script_path.c_str(), NULL);
-        perror("execl");
-        LogConfig::reportInternalError("Exec failed: " + std::string(strerror(errno)));
+
+        // execve를 사용하여 Python 스크립트 실행 (argv 배열 생성)
+        char *args[] = {const_cast<char *>("python"), const_cast<char *>(script_path.c_str()), NULL};
+        extern char **environ;
+        execve(PYTHON_PATH, args, environ);
+
+        // execve 실패 시
+        perror("execve");
+        LogConfig::reportInternalError("Execve failed: " + std::string(strerror(errno)));
         exit(EXIT_FAILURE);
     }
     else

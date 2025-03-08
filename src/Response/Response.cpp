@@ -112,7 +112,6 @@ bool Response::isCGIRequest(const std::string &real_path, const LocationConfig &
     return ResponseHandler::isCGIRequest(real_path, location_config);
 }
 
-// readErrorPageFromFile 함수 구현
 std::string Response::readErrorPageFromFile(const std::string &file_path, int status)
 {
     int fd = open(file_path.c_str(), O_RDONLY);

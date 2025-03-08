@@ -71,7 +71,6 @@ void Request::setBody(const std::string &body_data)
 
 bool Request::parse(const std::string &data, int &consumed, bool &isPartial)
 {
-    // 새 HttpRequestParser 인터페이스를 사용하여 파싱합니다.
     Parser parser;
     ParsedRequest parsed;
     bool result = parser.parse(data, parsed);
