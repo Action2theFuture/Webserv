@@ -45,7 +45,17 @@ bool KqueuePoller::modify(int fd, uint32_t events)
     EV_SET(&changes[changelist_count++], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
     EV_SET(&changes[changelist_count++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 
-    // 새로운 필터 추가
+    if (kevent(kqueue_fd, changes, changelist_count, NULL, 0, NULL) == -1)
+    {
+        if (errno != ENOENT)
+        {
+            perror("kevent modify (delete) failed");
+            changelist_count = 0;
+            return false;
+        }
+    }
+    changelist_count = 0;
+    // 새로운 이벤트 추가
     if (events & POLLER_READ)
     {
         EV_SET(&changes[changelist_count++], fd, EVFILT_READ, EV_ADD, 0, 0, NULL);

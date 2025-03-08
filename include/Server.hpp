@@ -15,7 +15,9 @@
 #include "ServerConfig.hpp"
 #include "SocketManager.hpp"
 #include "Utils.hpp"
+
 #include <iostream>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -23,50 +25,47 @@
 class Server
 {
   public:
-    // 생성자 및 소멸자
     Server(const std::string &configFile);
     ~Server();
-    // 서버 실행
     void start();
 
   private:
-    std::vector<ServerConfig> server_configs; // 서버 구성 리스트
-    Poller *poller;                           // Poller 인터페이스 포인터
-    std::map<int, std::string> partialRequests;
+    // Rule of Three 준수를 위해 복사 생성자와 복사 대입 연산자를 private으로 선언 (정의하지 않음)
+    Server(const Server &);
+    Server &operator=(const Server &);
 
-    // 소켓 초기화
+    // private 멤버 변수에 언더바 접두사 추가
+    std::vector<ServerConfig> _server_configs;
+    Poller *_poller;
+    std::map<int, std::string> _partialRequests;
+    std::map<int, std::string> _outgoingData;
+    std::map<int, Request> _requestMap;
+
+    // [ServerCore.cpp]
     void initSockets();
-
-    // Poller 이벤트 처리
     bool processPollerEvents(std::vector<Event> &events);
+
+    // [ServerEvents.cpp]
     void processEvents(const std::vector<Event> &events);
-
-    // 새 연결 처리
     void handleNewConnection(int server_fd);
-
-    // 클라이언트 요청 처리
     void handleClientRead(int client_fd, const ServerConfig &server_config);
-    void handleClientWrite(int client_fd);
-    void safelyCloseClient(int client_fd);
-    // 반복 recv를 통해 데이터를 누적 (논블로킹)
-    // handleClientRead에서 호출
     bool readClientData(int client_fd, std::string &buffer);
-    // 누적된 buffer를 해석해 요청 처리 (RequestHandler 호출)
     bool handleReceivedData(int client_fd, const ServerConfig &server_config, std::string &buffer);
 
-    // 비차단 모드 설정
+    // [ServerWrite.cpp]
+    void writePendingData(int client_fd);
+    bool checkKeepAliveNeeded(int client_fd);
+    void handleClientWrite(int client_fd);
     bool setNonBlocking(int fd);
-
-    // 파일 디스크립터가 서버 소켓인지 확인
     bool isServerSocket(int fd, ServerConfig **matched_server) const;
 
-    // 파일 디스크립터에 해당하는 서버 구성 찾기
+    // [ServerUtils.cpp]
     ServerConfig &findMatchingServerConfig(int fd);
-
+    void safelyCloseClient(int client_fd);
     bool processClientRequest(int client_fd, const ServerConfig &server_config, const std::string &request_str,
                               int &consumed);
-    void sendBadRequestResponse(int client_fd, const ServerConfig &server_config);
     void sendResponse(int client_fd, const Response &response);
+    void sendBadRequestResponse(int client_fd, const ServerConfig &server_config);
 };
 
 #endif // SERVER_HPP

@@ -128,16 +128,42 @@ bool isValidFilename(const std::string &filename)
     return true;
 }
 
+std::string getFileExtension(const std::string &filename)
+{
+    size_t pos = filename.find_last_of('.');
+    if (pos == std::string::npos)
+    {
+        return "";
+    }
+    std::string ext = filename.substr(pos); // 점 포함
+    for (size_t i = 0; i < ext.size(); ++i)
+    {
+        ext[i] = static_cast<char>(tolower(ext[i]));
+    }
+    return ext;
+}
+
 // 허용된 파일 확장자 확인
 bool isAllowedExtension(const std::string &filename, const std::vector<std::string> &allowed_extensions)
 {
-    size_t dot = filename.find_last_of('.');
-    if (dot == std::string::npos)
+    std::string ext = getFileExtension(filename);
+    if (ext.empty())
     {
-        return false; // 확장자가 없음
+        return false;
     }
-    std::string ext = filename.substr(dot);
-    return std::find(allowed_extensions.begin(), allowed_extensions.end(), ext) != allowed_extensions.end();
+    for (size_t i = 0; i < allowed_extensions.size(); ++i)
+    {
+        std::string allowed = allowed_extensions[i];
+        for (size_t j = 0; j < allowed.size(); ++j)
+        {
+            allowed[j] = static_cast<char>(tolower(allowed[j]));
+        }
+        if (ext == allowed)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool iequals(const std::string &a, const std::string &b)

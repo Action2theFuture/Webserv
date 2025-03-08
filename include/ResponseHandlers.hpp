@@ -1,29 +1,32 @@
 #ifndef RESPONSEHANDLERS_HPP
 #define RESPONSEHANDLERS_HPP
 
+#include "Configuration.hpp"
+#include "Define.hpp"
+#include "Request.hpp"
 #include "Response.hpp"
+#include "ServerConfig.hpp"
+#include "Utils.hpp"
 
-namespace ResponseHandlers
+class ResponseHandler
 {
-// 리디렉션 처리
-Response handleRedirection(const LocationConfig &location_config);
-// CGI 처리
-Response handleCGI(const Request &request, const std::string &real_path, const ServerConfig &server_config);
-// 정적 파일 처리
-Response handleStaticFile(const std::string &real_path, const ServerConfig &server_config);
-// 파일 업로드 처리
-Response handleUpload(const std::string &real_path, const Request &request, const LocationConfig &location_config,
-                      const ServerConfig &server_config);
-Response handleFileList(const Request &request, const LocationConfig &location_config,
-                        const ServerConfig &server_config);
-Response handleDeleteFile(const Request &request, const LocationConfig &location_config,
-                          const ServerConfig &server_config);
-Response handleDeleteAllFiles(const LocationConfig &location_config, const ServerConfig &server_config);
+  public:
+    static Response handleRedirection(const LocationConfig &location_config);
+    static Response handleCGI(const Request &request, const std::string &real_path, const ServerConfig &server_config);
+    static Response handleStaticFile(const std::string &real_path, const ServerConfig &server_config);
+    static Response handleUpload(const std::string &real_path, const Request &request,
+                                 const LocationConfig &location_config, const ServerConfig &server_config);
+    static Response handleFileList(const Request &request, const LocationConfig &location_config,
+                                   const ServerConfig &server_config);
+    static Response handleDeleteFile(const Request &request, const LocationConfig &location_config,
+                                     const ServerConfig &server_config);
+    static Response handleDeleteAllFiles(const LocationConfig &location_config, const ServerConfig &server_config);
+    static Response handleGetFileList(const LocationConfig &location_config, const ServerConfig &server_config);
+    static Response handleMethodNotAllowed(const LocationConfig &location_config, const ServerConfig &server_config);
 
-Response handleGetFileList(const LocationConfig &location_config, const ServerConfig &server_config);
+    // 추가: 메서드 유효성 검사 및 CGI 요청 여부 판단
+    static bool validateMethod(const Request &request, const LocationConfig &location_config);
+    static bool isCGIRequest(const std::string &real_path, const LocationConfig &location_config);
+};
 
-Response handleMethodNotAllowed(const LocationConfig &location_config, const ServerConfig &server_config);
-
-}; // namespace ResponseHandlers
-
-#endif // RESPONSEHANDLER_HPP
+#endif // RESPONSEHANDLERS_HPP

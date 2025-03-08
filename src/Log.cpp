@@ -5,8 +5,8 @@ const std::string RESET_COLOR = "\033[0m";
 const std::string WHITE_COLOR = "\033[37m";
 const std::string YELLOW_COLOR = "\033[33m";
 const std::string RED_COLOR = "\033[31m";
-const std::string GREEN_COLOR = "\033[32m]";
-const std::string MAGENTA_COLOR = "\033[35m]";
+const std::string GREEN_COLOR = "\033[32m";
+const std::string MAGENTA_COLOR = "\033[35m";
 
 void LogConfig::printColoredMessage(const std::string &message, const char *time_str, const std::string &color)
 {
