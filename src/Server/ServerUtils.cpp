@@ -23,7 +23,7 @@ std::set<int>& Server::getClosedFds() {
 
 void Server::safelyCloseClient(int client_fd)
 {
-    std::set<int>& closed_fds = getClosedFds();
+    static std::set<int> closed_fds;
     if (closed_fds.find(client_fd) != closed_fds.end())
         return;
     if (!_poller->remove(client_fd)) {
