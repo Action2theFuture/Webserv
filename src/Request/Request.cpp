@@ -1,55 +1,92 @@
 #include "Request.hpp"
+#include "HttpRequestParser.hpp" // 새 Parser 인터페이스 포함
 
-const std::vector<UploadedFile> &Request::getUploadedFiles() const
-{
-    return uploaded_files;
-}
-
-const std::map<std::string, std::string> &Request::getFormFields() const
-{
-    return form_fields;
-}
-
-Request::Request() : method("GET"), path("/"), query_string(""), headers()
+Request::Request() : _method("GET"), _path("/"), _query_string(""), _httpVersion("HTTP/1.0")
 {
 }
+
 Request::~Request()
 {
 }
 
+const std::vector<UploadedFile> &Request::getUploadedFiles() const
+{
+    return _uploaded_files;
+}
+
+const std::map<std::string, std::string> &Request::getFormFields() const
+{
+    return _form_fields;
+}
+
 std::string Request::getMethod() const
 {
-    return method;
+    return _method;
 }
 
 std::string Request::getPath() const
 {
-    return path;
+    return _path;
 }
 
 std::string Request::getQueryString() const
 {
-    return query_string;
+    return _query_string;
+}
+
+std::string Request::getHTTPVersion() const
+{
+    return _httpVersion;
 }
 
 std::map<std::string, std::string> Request::getQueryParams() const
 {
-    return queryParams;
+    return _queryParams;
 }
 
 std::map<std::string, std::string> Request::getHeaders() const
 {
-    return headers;
+    return _headers;
 }
 
 std::string Request::getBody() const
 {
-    return body;
+    return _body;
+}
+
+void Request::setUploadedFiles(const std::vector<UploadedFile> &files)
+{
+    _uploaded_files = files;
+}
+
+void Request::setFormFields(const std::map<std::string, std::string> &fields)
+{
+    _form_fields = fields;
+}
+
+void Request::setBody(const std::string &body_data)
+{
+    _body = body_data;
 }
 
 bool Request::parse(const std::string &data, int &consumed, bool &isPartial)
 {
     Parser parser;
-    return parser.parse(data, method, path, query_string, queryParams, headers, body, uploaded_files, form_fields,
-                        consumed, isPartial);
+    ParsedRequest parsed;
+    bool result = parser.parse(data, parsed);
+    if (result)
+    {
+        _method = parsed.method;
+        _path = parsed.path;
+        _query_string = parsed.query_string;
+        _queryParams = parsed.queryParams;
+        _headers = parsed.headers;
+        _body = parsed.body;
+        _uploaded_files = parsed.uploaded_files;
+        _form_fields = parsed.form_fields;
+        _httpVersion = parsed.httpVersion;
+        consumed = parsed.consumed;
+        isPartial = parsed.isPartial;
+    }
+    return result;
 }

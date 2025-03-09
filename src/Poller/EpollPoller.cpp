@@ -1,20 +1,25 @@
 #ifdef __linux__
 
 #include "EpollPoller.hpp"
+#include "Log.hpp"
+#include "Utils.hpp" // for intToString
+#include <sys/epoll.h>
 
-EpollPoller::EpollPoller()
+EpollPoller::EpollPoller() : _changes()
 {
-    epoll_fd = epoll_create1(0);
-    if (epoll_fd == -1)
+    _epoll_fd = epoll_create1(0);
+    if (_epoll_fd == -1)
     {
-        perror("epoll_create1");
+        std::cerr << "epoll_create1 failed: " << strerror(errno) << std::endl;
         exit(EXIT_FAILURE);
     }
+    // Reserve space for change events similar to Kqueue's fixed array size.
+    _changes.resize(MAX_EVENTS);
 }
 
 EpollPoller::~EpollPoller()
 {
-    close(epoll_fd);
+    close(_epoll_fd);
 }
 
 bool EpollPoller::add(int fd, uint32_t events)
@@ -27,9 +32,10 @@ bool EpollPoller::add(int fd, uint32_t events)
         ev.events |= EPOLLOUT;
     ev.data.fd = fd;
 
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
+    if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
     {
-        std::cerr << "Error: epoll_ctl add failed for fd " << fd << ": " << strerror(errno) << std::endl;
+        std::cerr << "epoll_ctl add failed for fd " << intToString(fd) << ": " 
+                  << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -45,9 +51,10 @@ bool EpollPoller::modify(int fd, uint32_t events)
         ev.events |= EPOLLOUT;
     ev.data.fd = fd;
 
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &ev) == -1)
+    if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, fd, &ev) == -1)
     {
-        std::cerr << "Error: epoll_ctl modify failed for fd " << fd << ": " << strerror(errno) << std::endl;
+        std::cerr << "epoll_ctl modify failed for fd " << intToString(fd) << ": " 
+                  << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -55,9 +62,10 @@ bool EpollPoller::modify(int fd, uint32_t events)
 
 bool EpollPoller::remove(int fd)
 {
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1)
+    if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1)
     {
-        std::cerr << "Error: epoll_ctl remove failed for fd " << fd << ": " << strerror(errno) << std::endl;
+        std::cerr << "epoll_ctl remove failed for fd " << intToString(fd) << ": " 
+                  << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -65,36 +73,41 @@ bool EpollPoller::remove(int fd)
 
 int EpollPoller::poll(std::vector<Event> &events_out, int timeout)
 {
+    // Create a temporary array for epoll_wait
     struct epoll_event events[MAX_EVENTS];
-    int n = epoll_wait(epoll_fd, events, MAX_EVENTS, timeout);
-
-    if (n == -1)
+    int nevents = epoll_wait(_epoll_fd, events, MAX_EVENTS, timeout);
+    if (nevents == -1)
     {
-        perror("epoll_wait");
+        std::cerr << "epoll_wait failed: " << strerror(errno) << std::endl;
         return -1;
     }
-
     events_out.clear();
-    for (int i = 0; i < n; ++i)
+    for (int i = 0; i < nevents; ++i)
     {
+        if (events[i].events & EPOLLERR)
+        {
+            int err = 0;
+            socklen_t len = sizeof(err);
+            if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0) {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
+                      << ": " << strerror(err) << std::endl;
+            } else  {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
+                      << ": unable to get error" << std::endl;
+            }
+            remove(events[i].data.fd);
+            continue;
+        }
         Event ev;
         ev.fd = events[i].data.fd;
         ev.events = 0;
-
         if (events[i].events & EPOLLIN)
             ev.events |= POLLER_READ;
         if (events[i].events & EPOLLOUT)
             ev.events |= POLLER_WRITE;
-        if (events[i].events & EPOLLERR)
-        {
-            std::cerr << "Error: epoll event error on fd " << ev.fd << std::endl;
-            continue; // 에러 이벤트는 무시
-        }
-
         events_out.push_back(ev);
     }
-
-    return n;
+    return nevents;
 }
 
 #endif

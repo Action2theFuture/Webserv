@@ -11,17 +11,22 @@ IFLAGS = -I ./include/
 SRC_DIR = src
 OBJ_DIR = obj
 SERVER_DIR = $(SRC_DIR)/Server
+PARSING_DIR = $(SRC_DIR)/Parsing
 REQUEST_DIR = $(SRC_DIR)/Request
 RESPONSE_DIR = $(SRC_DIR)/Response
 POLLER_DIR = $(SRC_DIR)/Poller
 
-SRC = main.cpp Utils.cpp Configuration.cpp Log.cpp
-SERVER = Server.cpp SocketManager.cpp
-REQUEST = Request.cpp Parser.cpp
+SRC = main.cpp Utils.cpp Log.cpp
+PARSING = ConfigurationCore.cpp ConfigurationParse.cpp HttpMultipartParser.cpp \
+	HttpParserUtils.cpp HttpRequestParser.cpp
+SERVER = ServerCore.cpp ServerMatchLocation.cpp SocketManager.cpp \
+	ServerUtils.cpp ServerWrite.cpp ServerEvents.cpp ServerWriteHelper.cpp
+REQUEST = Request.cpp
 RESPONSE = Response.cpp ResponseHandlers.cpp ResponseUtils.cpp \
 		CGIHandler.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRC))
+SRCS += $(addprefix $(PARSING_DIR)/, $(PARSING))
 SRCS += $(addprefix $(SERVER_DIR)/, $(SERVER))
 SRCS += $(addprefix $(REQUEST_DIR)/, $(REQUEST))
 SRCS += $(addprefix $(RESPONSE_DIR)/, $(RESPONSE))
@@ -38,7 +43,8 @@ endif
 
 OBJS := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-all: $(NAME)
+all: $(NAME) 
+	@ulimit -S -n 65536
 
 $(NAME): $(OBJS)
 	$(CPP) $(CFLAGS) -o $@ $(OBJS)
@@ -50,6 +56,9 @@ $(OBJ_DIR)/%.o: %.cpp
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
+dev : CFLAGS += -DDEV_MODE
+dev : fclean $(NAME)
+
 debug : CFLAGS += -g3 -fsanitize=address
 debug : fclean $(NAME)
 
@@ -58,7 +67,8 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
+	rm -rf logs uploads
 
 re: fclean all
 
-.PHONY: all clean fclean re debug
+.PHONY: all dev clean fclean re debug

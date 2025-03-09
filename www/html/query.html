@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Key & Value</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 50%;
+      margin: 100px auto;
+      background-color: #fff;
+      padding: 30px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 80%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px 20px;
+      font-size: 24px;
+      color: #4CAF50;
+    }
+    th {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Key & Value</h1>
+    <!-- 서버에서 쿼리 문자열의 key와 value를 치환하여 아래 테이블에 표시 -->
+    <table>
+      <tr>
+        <th>🔑</th>
+        <td>{{key}}</td>
+      </tr>
+      <tr>
+        <th>💲</th>
+        <td>{{value}}</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
