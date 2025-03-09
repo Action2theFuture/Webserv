@@ -16,6 +16,7 @@
 #include "SocketManager.hpp"
 #include "Utils.hpp"
 
+#include <csignal>
 #include <iostream>
 #include <map>
 #include <set>
@@ -28,6 +29,8 @@ class Server
     Server(const std::string &configFile);
     ~Server();
     void start();
+    // graceful shutdown을 위한 stop() 메소드 추가
+    void stop();
 
   private:
     // Rule of Three 준수를 위해 복사 생성자와 복사 대입 연산자를 private으로 선언 (정의하지 않음)
@@ -40,6 +43,8 @@ class Server
     std::map<int, std::string> _partialRequests;
     std::map<int, std::string> _outgoingData;
     std::map<int, Request> _requestMap;
+
+    bool _is_running;
 
     // [ServerCore.cpp]
     void initSockets();
@@ -60,7 +65,7 @@ class Server
     bool isServerSocket(int fd, ServerConfig **matched_server) const;
 
     // [ServerUtils.cpp]
-    static std::set<int>& getClosedFds();
+    static std::set<int> &getClosedFds();
     ServerConfig &findMatchingServerConfig(int fd);
     void safelyCloseClient(int client_fd);
     bool processClientRequest(int client_fd, const ServerConfig &server_config, const std::string &request_str,
