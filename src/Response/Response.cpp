@@ -83,14 +83,19 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
-    if (!ResponseHandler::validateMethod(request, location_config))
+    bool isMethodValid = validateMethod(request, location_config);
+    if (!isMethodValid)
         return ResponseHandler::handleMethodNotAllowed(location_config, server_config);
+
     if (!location_config.redirect.empty())
         return ResponseHandler::handleRedirection(location_config);
+
     std::string real_path;
     if (!getRealPath(path, location_config, server_config, real_path))
         return createErrorResponse(404, server_config);
+
     if (ResponseHandler::isCGIRequest(real_path, location_config))
+    {
         return ResponseHandler::handleCGI(request, real_path, server_config);
     if (path == "/upload" && iequals(method, "POST"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
@@ -98,9 +103,27 @@ Response Response::createResponse(const Request &request, const LocationConfig &
         return ResponseHandler::handleFileList(request, location_config, server_config);
     if (path == "/filelist/all" && iequals(method, "DELETE"))
         return ResponseHandler::handleDeleteAllFiles(location_config, server_config);
-    if (path.find("/query") == 0)
-        return ResponseHandler::handleCatQuery(real_path, request, server_config);
     return ResponseHandler::handleStaticFile(real_path, server_config);
+}
+
+bool Response::validateMethod(const Request &request, const LocationConfig &location_config)
+{
+    //using namespace ResponseUtils;
+    std::string method = request.getMethod();
+
+    // 메서드가 허용된 목록에 있는지 확인
+    for (size_t i = 0; i < location_config.methods.size(); ++i)
+    {
+        if (iequals(method, location_config.methods[i]))
+        {
+            return true; // 메서드가 허용됨
+        }
+    }
+
+    // 메서드가 허용되지 않음
+    std::string errorMsg = "Method not allowed: " + method;
+    LogConfig::reportInternalError(errorMsg);
+    return false;
 }
 
 bool Response::getRealPath(const std::string &path, const LocationConfig &location_config,
@@ -112,11 +135,6 @@ bool Response::getRealPath(const std::string &path, const LocationConfig &locati
         return false;
     real_path = std::string(real_path_cstr);
     return true;
-}
-
-bool Response::isCGIRequest(const std::string &real_path, const LocationConfig &location_config)
-{
-    return ResponseHandler::isCGIRequest(real_path, location_config);
 }
 
 std::string Response::readErrorPageFromFile(const std::string &file_path, int status)

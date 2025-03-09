@@ -39,11 +39,17 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     }
     else if (key == "cgi_extension")
     {
-        iss >> location_config.cgi_extension;
+        std::string ext;
+        location_config.cgi_extension.clear();
+        while (iss >> ext)
+            location_config.cgi_extension.push_back(ext);
     }
     else if (key == "cgi_path")
     {
-        iss >> location_config.cgi_path;
+        std::string path;
+        location_config.cgi_path.clear();
+        while (iss >> path)
+            location_config.cgi_path.push_back(path);
     }
     else if (key == "upload_directory")
     {

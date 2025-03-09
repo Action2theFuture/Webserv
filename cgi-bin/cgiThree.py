@@ -1,8 +1,28 @@
-#!/usr/bin/env python3
-from datetime import datetime
+import os
 
-print("Content-Type: text/html\n")
-print("<html><body>")
-print("<h1>Current Time</h1>")
-print(f"<p>The current time is: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>")
-print("</body></html>")
+
+# Get PATH_INFO
+
+path_info = os.environ.get('PATH_INFO')
+print("PATH_INFO = " + path_info)
+
+if path_info == '/env':
+    # Print environment variables
+    print("Content-Type: text/html\n")
+    print("<html><body>")
+    print("<h1>Environment Variables:</h1>")
+    print("<pre>")
+
+    for key, value in os.environ.items():
+        print(f"{key}: {value}")
+
+    print("</pre>")
+    print("</body></html>")
+
+
+else:
+    # Print a simple message
+    print("Content-Type: text/html\n")
+    print("<html><body>")
+    print("<h1>Welcome to our site!</h1>")
+    print("</body></html>")

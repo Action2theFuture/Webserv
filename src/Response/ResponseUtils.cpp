@@ -191,9 +191,16 @@ bool ResponseUtil::isFileExtensionAllowed(const std::string &filename,
 bool ResponseUtil::saveUploadedFile(const std::string &upload_dir, const UploadedFile &file,
                                     std::string &sanitized_filename)
 {
-    sanitized_filename = sanitizeFilename(file.filename);
     std::string file_path = upload_dir + "/" + sanitized_filename;
     std::ofstream ofs(file_path.c_str(), std::ios::binary);
+
+    // Check if the directory is writable
+    if (access(upload_dir.c_str(), W_OK) != 0)
+    {
+        LogConfig::reportInternalError("Upload directory is not writable: " + upload_dir);
+        return false;
+    }
+
     if (!ofs.is_open())
     {
         LogConfig::reportInternalError("Failed to open file for writing: " + file_path + ": " + strerror(errno));

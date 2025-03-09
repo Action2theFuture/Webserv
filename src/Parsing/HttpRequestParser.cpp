@@ -61,11 +61,13 @@ bool Parser::parse(const std::string &data, ParsedRequest &req)
     return true;
 }
 
+
 bool Parser::parseRequestLine(const std::string &line, ParsedRequest &req)
 {
     size_t firstSpace = line.find(' ');
     if (firstSpace == std::string::npos)
         return false;
+
     size_t secondSpace = line.find(' ', firstSpace + 1);
     if (secondSpace == std::string::npos)
     {
@@ -76,13 +78,46 @@ bool Parser::parseRequestLine(const std::string &line, ParsedRequest &req)
     {
         req.httpVersion = line.substr(secondSpace + 1);
     }
+
     req.method = line.substr(0, firstSpace);
     std::string url = line.substr(firstSpace + 1, secondSpace - firstSpace - 1);
     size_t qmark = url.find('?');
     if (qmark != std::string::npos)
     {
         req.query_string = url.substr(qmark + 1);
-        req.path = url.substr(0, qmark);
+        url = url.substr(0, qmark);
+    }
+    else
+    {
+        req.query_string.clear();
+    }
+
+    // Split URL into req.path and PATH_INFO
+    size_t dot_pos = url.find_last_of('.');
+    if (dot_pos != std::string::npos)
+    {
+        size_t slash_pos = url.find('/', dot_pos);
+        if (slash_pos != std::string::npos)
+        {
+            std::string path_info = url.substr(slash_pos);
+            setenv("PATH_INFO", path_info.c_str(), 1);
+            req.path = url.substr(0, slash_pos);
+        }
+        else
+        {
+            setenv("PATH_INFO", "", 1); // Set PATH_INFO to empty if no slash found
+            req.path = url;
+        }
+    }
+    else
+    {
+        setenv("PATH_INFO", "", 1); // Set PATH_INFO to empty if no dot found
+        req.path = url;
+    }
+
+    // Parse query parameters if present
+    if (!req.query_string.empty())
+    {
         std::stringstream ss(req.query_string);
         std::string pair;
         while (std::getline(ss, pair, '&'))
@@ -100,11 +135,6 @@ bool Parser::parseRequestLine(const std::string &line, ParsedRequest &req)
                 req.queryParams[key] = "";
             }
         }
-    }
-    else
-    {
-        req.path = url;
-        req.query_string.clear();
     }
     return true;
 }
