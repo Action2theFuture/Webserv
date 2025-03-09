@@ -24,6 +24,7 @@ void Server::safelyCloseClient(int client_fd)
     if (!_poller->remove(client_fd)) {
         std::cerr << "Warning: Failed to remove fd " << intToString(client_fd) << " from poller" << std::endl;
     }
+    shutdown(client_fd, SHUT_WR);
     close(client_fd);
     closed_fds.insert(client_fd);
 }
