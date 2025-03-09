@@ -38,5 +38,8 @@
 logs
 uploads
 *.swp
+<<<<<<< HEAD
+=======
 
 webserv
+>>>>>>> main
