@@ -1,6 +1,14 @@
-NAME = webserv
+COLOR_RESET = \033[0m
+COLOR_RED = \033[1;31m
+COLOR_GREEN = \033[1;32m
+COLOR_YELLOW = \033[1;33m
+COLOR_BLUE = \033[1;34m
+COLOR_CYAN = \033[1;36m
 
+NAME = webserv
 UNAME_S := $(shell uname)
+
+SPINNER_SCRIPT = assets/spinner.sh
 
 OBJ = $(SRC:.cpp=.o)
 
@@ -47,27 +55,36 @@ all: $(NAME)
 	@ulimit -S -n 65536
 
 $(NAME): $(OBJS)
-	$(CPP) $(CFLAGS) -o $@ $(OBJS)
+	@$(CPP) $(CFLAGS) -o $@ $(OBJS)  > /dev/null 2>&1 & COMPILER_PID=$$!; \
+	./$(SPINNER_SCRIPT) $$COMPILER_PID; \
+	wait $$COMPILER_PID
+	@echo "$(COLOR_GREEN)Program Name : $(NAME)$(COLOR_RESET)"
+
+OBJ_FILES_SPINNER_PID=
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(CPP) $(CFLAGS) $(IFLAGS) -c $< -o $@
+	@$(CPP) $(CFLAGS) $(IFLAGS) -c $< -o $@ > /dev/null 2>&1
 
 $(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+	@mkdir -p $(OBJ_DIR)
 
 dev : CFLAGS += -DDEV_MODE
 dev : fclean $(NAME)
+	@echo "$(COLOR_GREEN)Start DeVMoDe! 🛠️$(COLOR_RESET)"
 
 debug : CFLAGS += -g3 -fsanitize=address
 debug : fclean $(NAME)
+	@echo "$(COLOR_GREEN)Start Debugging! 🛠️$(COLOR_RESET)"
 
 clean:
-	rm -rf $(OBJ_DIR)
+	@rm -rf $(OBJ_DIR)
+	@echo "$(COLOR_RED)Cleaning completed successfully 🧹$(COLOR_RESET)"
 
 fclean: clean
-	rm -f $(NAME)
-	rm -rf logs uploads
+	@rm -f $(NAME)
+	@rm -rf logs uploads
+	@echo "$(COLOR_GREEN)Recompleted successfully 🎉$(COLOR_RESET)"
 
 re: fclean all
 
