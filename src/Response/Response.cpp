@@ -92,11 +92,11 @@ Response Response::createResponse(const Request &request, const LocationConfig &
         return createErrorResponse(404, server_config);
     if (ResponseHandler::isCGIRequest(real_path, location_config))
         return ResponseHandler::handleCGI(request, real_path, server_config);
-    if (path == "/upload" && iequals(method, "post"))
+    if (path == "/upload" && iequals(method, "POST"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
     if (path == "/filelist")
         return ResponseHandler::handleFileList(request, location_config, server_config);
-    if (path == "/filelist/all" && iequals(method, "delete"))
+    if (path == "/filelist/all" && iequals(method, "DELETE"))
         return ResponseHandler::handleDeleteAllFiles(location_config, server_config);
     if (path.find("/query") == 0)
         return ResponseHandler::handleCatQuery(real_path, request, server_config);
