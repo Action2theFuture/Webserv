@@ -1,8 +1,8 @@
 import os
-import datetime
 
 # Get PATH_INFO
 path_info = os.environ.get('PATH_INFO')
+print("PATH_INFO = " + path_info)
 
 if path_info == '/env':
     # Print environment variables
@@ -15,9 +15,8 @@ if path_info == '/env':
     print("</pre>")
     print("</body></html>")
 else:
-    # Print current time
+    # Print a simple message
     print("Content-Type: text/html\n")
     print("<html><body>")
-    print("<h1>Current Time:</h1>")
-    print("<p>" + str(datetime.datetime.now()) + "</p>")
+    print("<h1>Thanks for visiting!</h1>")
     print("</body></html>")
