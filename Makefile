@@ -81,7 +81,7 @@ clean:
 fclean: clean
 	@rm -f $(NAME)
 	@rm -rf logs uploads
-	@echo "$(COLOR_GREEN)Recompleted successfully 🎉$(COLOR_RESET)"
+	@echo "$(COLOR_RED)Full Cleaning completed successfully 🧹$(COLOR_RESET)"
 
 re: fclean all
 

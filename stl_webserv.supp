@@ -1,0 +1,15 @@
+{
+   glibcxx_basic_string_still_reachable_custom
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:operator new*
+      fun:*_M_construct<char const*,char const*,std::forward_iterator_tag>*
+}
+
+{
+   webserv_vector_event_still_reachable_custom
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:operator new*
+   fun:*_M_allocate*
+}

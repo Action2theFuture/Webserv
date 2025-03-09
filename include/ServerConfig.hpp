@@ -19,8 +19,13 @@ struct ServerConfig
     std::vector<int> server_sockets;        // 서버 소켓 리스트
 
     // 생성자: 기본값 설정
-    ServerConfig() {};
-
+    ServerConfig()
+      : port(8080),                      // 포트를 0으로 초기화
+        server_name(""),                 // 빈 문자열로 초기화 (자동으로 이루어짐)
+        root(""),                        // 빈 문자열로 초기화 (자동으로 이루어짐)
+        client_max_body_size(1048576)    // 예: 1MB 기본값 설정
+    {
+    }
     ~ServerConfig() {};
 };
 

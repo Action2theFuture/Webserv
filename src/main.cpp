@@ -11,7 +11,6 @@ void signalHandler(int signum)
         g_server->stop();
         // 이후 cleanup은 Server의 소멸자에서 수행됩니다.
         delete g_server;
-        delete g_server;
         g_server = NULL;
     }
     exit(EXIT_SUCCESS);
