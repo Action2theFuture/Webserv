@@ -43,7 +43,7 @@ endif
 
 OBJS := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-all: $(NAME)
+all: $(NAME) 
 	@ulimit -S -n 65536
 
 $(NAME): $(OBJS)
@@ -55,6 +55,9 @@ $(OBJ_DIR)/%.o: %.cpp
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
+
+dev : CFLAGS += -DDEV_MODE
+dev : fclean $(NAME)
 
 debug : CFLAGS += -g3 -fsanitize=address
 debug : fclean $(NAME)
@@ -68,4 +71,4 @@ fclean: clean
 
 re: fclean all
 
-.PHONY: all clean fclean re debug
+.PHONY: all dev clean fclean re debug

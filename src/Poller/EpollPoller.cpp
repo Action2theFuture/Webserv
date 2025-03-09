@@ -86,18 +86,17 @@ int EpollPoller::poll(std::vector<Event> &events_out, int timeout)
     {
         if (events[i].events & EPOLLERR)
         {
-                int err = 0;
-    socklen_t len = sizeof(err);
-    if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0) {
-        std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
-                  << ": " << strerror(err) << std::endl;
-    } else {
-        std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
-                  << ": unable to get error" << std::endl;
-    }
-    // 연결이 리셋되었으므로 해당 fd를 epoll에서 제거합니다.
-    remove(events[i].data.fd);
-    continue;
+            int err = 0;
+            socklen_t len = sizeof(err);
+            if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0) {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
+                      << ": " << strerror(err) << std::endl;
+            } else  {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
+                      << ": unable to get error" << std::endl;
+            }
+            remove(events[i].data.fd);
+            continue;
         }
         Event ev;
         ev.fd = events[i].data.fd;
