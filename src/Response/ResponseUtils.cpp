@@ -192,7 +192,6 @@ bool ResponseUtil::saveUploadedFile(const std::string &upload_dir, const Uploade
                                     std::string &sanitized_filename)
 {
     std::string file_path = upload_dir + "/" + sanitized_filename;
-    std::cout << "DEBUG) Uploading to :" << file_path << std::endl;
     std::ofstream ofs(file_path.c_str(), std::ios::binary);
 
     // Check if the directory is writable

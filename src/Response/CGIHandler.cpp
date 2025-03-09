@@ -39,7 +39,6 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
 {
 
     // Check extension validity
-    std::cout << "DEBUG) Script Path: " << script_path << std::endl;
     std::string extension = script_path.substr(script_path.find_last_of('.') + 1);
 
     if (extension != "py" && extension != "php" && extension != "sh" && extension != "pl")
@@ -74,16 +73,6 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
         }
         close(pipefd[1]);
         setEnvironmentVariables(request, script_path);
-
-        /* // execve를 사용하여 Python 스크립트 실행 (argv 배열 생성)
-        char *args[] = {const_cast<char *>("python"), const_cast<char *>(script_path.c_str()), NULL};
-        extern char **environ;
-        execve(PYTHON_PATH, args, environ);
-
-        // execve 실패 시
-        perror("execve");
-        LogConfig::reportInternalError("Execve failed: " + std::string(strerror(errno)));
-        exit(EXIT_FAILURE); */
 
         if (extension == "py")
         {

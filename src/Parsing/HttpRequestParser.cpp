@@ -61,53 +61,6 @@ bool Parser::parse(const std::string &data, ParsedRequest &req)
     return true;
 }
 
-/* bool Parser::parseRequestLine(const std::string &line, ParsedRequest &req)
-{
-    size_t firstSpace = line.find(' ');
-    if (firstSpace == std::string::npos)
-        return false;
-    size_t secondSpace = line.find(' ', firstSpace + 1);
-    if (secondSpace == std::string::npos)
-    {
-        secondSpace = line.size();
-        req.httpVersion = "HTTP/1.0";
-    }
-    else
-    {
-        req.httpVersion = line.substr(secondSpace + 1);
-    }
-    req.method = line.substr(0, firstSpace);
-    std::string url = line.substr(firstSpace + 1, secondSpace - firstSpace - 1);
-    size_t qmark = url.find('?');
-    if (qmark != std::string::npos)
-    {
-        req.query_string = url.substr(qmark + 1);
-        req.path = url.substr(0, qmark);
-        std::stringstream ss(req.query_string);
-        std::string pair;
-        while (std::getline(ss, pair, '&'))
-        {
-            size_t eq = pair.find('=');
-            if (eq != std::string::npos)
-            {
-                std::string key = urlDecode(pair.substr(0, eq));
-                std::string value = urlDecode(pair.substr(eq + 1));
-                req.queryParams[key] = value;
-            }
-            else
-            {
-                std::string key = urlDecode(pair);
-                req.queryParams[key] = "";
-            }
-        }
-    }
-    else
-    {
-        req.path = url;
-        req.query_string.clear();
-    }
-    return true;
-} */
 
 bool Parser::parseRequestLine(const std::string &line, ParsedRequest &req)
 {

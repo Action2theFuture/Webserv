@@ -94,16 +94,11 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     if (!getRealPath(path, location_config, server_config, real_path))
         return createErrorResponse(404, server_config);
 
-    std::cout << "DEBUG) CGI Request Check Starting..." << std::endl;
     if (ResponseHandler::isCGIRequest(real_path, location_config))
     {
-        std::cout << "DEBUG) CGI detected" << std::endl;
         return ResponseHandler::handleCGI(request, real_path, server_config);
     }
 
-    /* bool isCGI = isCGIRequest(real_path, location_config);
-    if (isCGI)
-        return ResponseHandler::handleCGI(request, real_path, server_config); */
     if (path == "/upload" && iequals(method, "post"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
     if (path == "/filelist")
@@ -143,18 +138,6 @@ bool Response::getRealPath(const std::string &path, const LocationConfig &locati
     real_path = std::string(real_path_cstr);
     return true;
 }
-
-/* bool Response::isCGIRequest(const std::string &real_path, const LocationConfig &location_config)
-{
-    //using namespace ResponseUtils;
-    if (!location_config.cgi_extension.empty() && real_path.size() >= location_config.cgi_extension.size())
-    {
-        std::string ext = real_path.substr(real_path.size() - location_config.cgi_extension.size());
-        if (iequals(ext, location_config.cgi_extension))
-            return true;
-    }
-    return false;
-} */
 
 std::string Response::readErrorPageFromFile(const std::string &file_path, int status)
 {

@@ -25,60 +25,6 @@ Response ResponseHandler::handleRedirection(const LocationConfig &location_confi
     return res;
 }
 
-/* Response ResponseHandler::handleCGI(const Request &request, const std::string &real_path,
-                                    const ServerConfig &server_config)
-{
-    struct stat buffer;
-    if (stat(real_path.c_str(), &buffer) != 0)
-    {
-        LogConfig::reportInternalError("Resource not available: " + std::string(strerror(errno)));
-        return Response::createErrorResponse(404, server_config);
-    }
-    Response res;
-    CGIHandler cgi_handler;
-    std::string cgi_output, cgi_content_type;
-    if (!cgi_handler.execute(request, real_path, cgi_output, cgi_content_type))
-        return Response::createErrorResponse(500, server_config);
-    size_t pos = cgi_output.find("\r\n\r\n");
-    if (pos != std::string::npos)
-    {
-        std::string headers_part = cgi_output.substr(0, pos);
-        std::string body_part = cgi_output.substr(pos + 4);
-        std::istringstream iss(headers_part);
-        std::string line;
-        while (std::getline(iss, line))
-        {
-            if (!line.empty() && line[line.size() - 1] == '\r')
-                line.resize(line.size() - 1);
-            size_t colon = line.find(':');
-            if (colon != std::string::npos)
-            {
-                std::string key = trim(line.substr(0, colon));
-                std::string value = trim(line.substr(colon + 1));
-                res.setHeader(key, value);
-            }
-        }
-        res.setStatus("200 SUCCESS");
-        res.setBody(body_part);
-        std::stringstream ss;
-        ss << body_part.size();
-        res.setHeader("Content-Length", ss.str());
-        if (!cgi_content_type.empty())
-            res.setHeader("Content-Type", cgi_content_type);
-    }
-    else
-    {
-        res.setStatus("200 OK");
-        res.setBody(cgi_output);
-        std::stringstream ss;
-        ss << cgi_output.size();
-        res.setHeader("Content-Length", ss.str());
-        res.setHeader("Content-Type", "text/html");
-    }
-    LogConfig::reportSuccess(200, "SUCCESS");
-    return res;
-} */
-
 Response ResponseHandler::handleCGI(const Request &request, const std::string &real_path,
                                     const ServerConfig &server_config)
 {
@@ -95,8 +41,6 @@ Response ResponseHandler::handleCGI(const Request &request, const std::string &r
             real_path_copy = real_path_copy.substr(0, slash_pos);
         }
     }
-
-    std::cout << "DEBUG) handleCGI: real path copy: " << real_path_copy << std::endl;
 
     // Check if the resource exists
     struct stat buffer;
@@ -231,7 +175,6 @@ Response ResponseHandler::handleUpload(const std::string &real_path, const Reque
     {
         // Sanitize the filename
         std::string sanitized_filename = sanitizeFilename(it->filename);
-        std::cout << "DEBUG) sanitized_filename: " << sanitized_filename << std::endl;
 
         // Check if the file extension is allowed
         if (!ResponseUtil::isFileExtensionAllowed(sanitized_filename, allowed_extensions))
@@ -358,7 +301,6 @@ bool ResponseHandler::validateMethod(const Request &request, const LocationConfi
 // 추가: isCGIRequest
 bool ResponseHandler::isCGIRequest(const std::string &real_path, const LocationConfig &location_config)
 {
-    std::cout << "DEBUG) Real Path: " << real_path.c_str() << std::endl;
 
     if (!location_config.cgi_extension.empty())
     {
