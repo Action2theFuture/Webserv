@@ -258,3 +258,64 @@ bool ResponseHandler::isCGIRequest(const std::string &real_path, const LocationC
     }
     return false;
 }
+
+Response ResponseHandler::handleCatQuery(const std::string &real_path, const Request &request, const ServerConfig &server_config)
+{
+    Response res;
+    int fd = open(real_path.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        perror("open");
+        return Response::createErrorResponse(404, server_config);
+    }
+
+    char buffer[BUFFER_SIZE];
+    std::string file_content;
+    ssize_t bytes_read;
+    while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
+        file_content.append(buffer, bytes_read);
+    close(fd);
+    if (bytes_read == -1)
+    {
+        perror("read");
+        return Response::createErrorResponse(500, server_config);
+    }
+
+    // 쿼리 파라미터를 가져옵니다.
+    // 여기서는 첫 번째 쿼리 파라미터만 사용한다고 가정합니다.
+    std::map<std::string, std::string> params = request.getQueryParams();
+    std::string key = "";
+    std::string value = "";
+    if (!params.empty())
+    {
+        key = params.begin()->first;
+        value = params.begin()->second;
+    }
+
+    // 템플릿 파일 내 플레이스홀더 "{{key}}"와 "{{value}}"를 실제 값으로 치환합니다.
+    size_t pos = file_content.find("{{key}}");
+    while (pos != std::string::npos)
+    {
+        file_content.replace(pos, 7, key);
+        pos = file_content.find("{{key}}", pos + key.size());
+    }
+    pos = file_content.find("{{value}}");
+    while (pos != std::string::npos)
+    {
+        file_content.replace(pos, 9, value);
+        pos = file_content.find("{{value}}", pos + value.size());
+    }
+
+    // MIME 타입 설정 (HTML)
+    std::string content_type = "text/html; charset=UTF-8";
+    res.setStatus("200 OK");
+    res.setBody(file_content);
+
+    std::stringstream ss;
+    ss << file_content.size();
+    res.setHeader("Content-Length", ss.str());
+    res.setHeader("Content-Type", content_type);
+
+    LogConfig::reportSuccess(200, "SUCCESS");
+    return res;
+}
