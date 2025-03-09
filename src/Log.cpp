@@ -1,4 +1,11 @@
 #include "Log.hpp"
+#include "Utils.hpp" // for intToString
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <cstring>
+#include <ctime>
+#include <fstream>
+#include <iostream>
 
 // ANSI escape codes
 const std::string RESET_COLOR = "\033[0m";
@@ -21,7 +28,25 @@ std::string LogConfig::getCurrentTimeStr()
     return std::string(buffer);
 }
 
-// 서버 설정을 출력하는 함수
+void LogConfig::ensureLogDirectoryExists()
+{
+#ifdef DEV_MODE
+    const char *logDir = LOG_DIR;
+    struct stat st;
+    if (stat(logDir, &st) == -1)
+    {
+        if (mkdir(logDir, 0755) == -1)
+        {
+            std::cerr << "Error: Failed to create log directory " << logDir << ": " << strerror(errno) << std::endl;
+        }
+        else
+        {
+            std::cerr << "Log directory created: " << logDir << std::endl;
+        }
+    }
+#endif
+}
+
 void LogConfig::printServerConfig(const ServerConfig &server, size_t index, std::ofstream &ofs)
 {
     std::string time_str = getCurrentTimeStr();
@@ -32,8 +57,7 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index, std:
     ofs << "  Root: " << server.root << std::endl;
     ofs << "  Client Max Body Size: " << server.client_max_body_size << std::endl;
     ofs << "  Error Pages:" << std::endl;
-    for (std::map<int, std::string>::const_iterator it = server.error_pages.begin(); it != server.error_pages.end();
-         ++it)
+    for (std::map<int, std::string>::const_iterator it = server.error_pages.begin(); it != server.error_pages.end(); ++it)
     {
         ofs << "    " << it->first << " -> " << it->second << std::endl;
     }
@@ -48,9 +72,7 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index, std:
         {
             ofs << location.methods[k];
             if (k != location.methods.size() - 1)
-            {
                 ofs << ", ";
-            }
         }
         ofs << std::endl;
         ofs << "      Root: " << location.root << std::endl;
@@ -60,9 +82,7 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index, std:
         {
             ofs << location.allowed_extensions[k];
             if (k != location.allowed_extensions.size() - 1)
-            {
                 ofs << ", ";
-            }
         }
         ofs << std::endl;
         ofs << "      Directory Listing: " << (location.directory_listing ? "on" : "off") << std::endl;
@@ -73,13 +93,11 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index, std:
     }
 }
 
-// 모든 서버 설정을 출력하는 함수
 void LogConfig::printAllConfigurations(const std::vector<ServerConfig> &servers)
 {
-    // 로그 디렉토리 생성 확인
+#ifdef DEV_MODE
     ensureLogDirectoryExists();
 
-    // 로그 파일 열기 (append 모드)
     std::ofstream ofs(SERVER_CONFIG_LOG_FILE, std::ios::app);
     if (!ofs.is_open())
     {
@@ -97,24 +115,29 @@ void LogConfig::printAllConfigurations(const std::vector<ServerConfig> &servers)
     ofs << "[" << time_str << "] ======================================" << std::endl << std::endl;
 
     ofs.close();
+#else
+    (void)servers;
+    // 디버그 모드가 아닐 때는 콘솔에만 출력
+    std::string time_str = getCurrentTimeStr();
+    std::cerr << "[" << time_str << "] Parsed Server Configurations" << std::endl;
+#endif
 }
-// 성공(200번대) 로그를 기록하는 함수
+
 void LogConfig::reportSuccess(int status, const std::string &message)
 {
+    std::string time_str = getCurrentTimeStr();
+#ifdef DEV_MODE
     ensureLogDirectoryExists();
 
-    std::string time_str = getCurrentTimeStr();
     std::ofstream log_file(STATUS_SUCCESS_LOG_FILE, std::ios::app);
     if (!log_file.is_open())
     {
-        // 파일 생성 시도
         std::ofstream create_file(STATUS_SUCCESS_LOG_FILE);
         if (!create_file.is_open())
         {
             std::cerr << WHITE_COLOR << "[" << time_str << "] Error: Failed to create log file "
                       << STATUS_SUCCESS_LOG_FILE << RESET_COLOR << std::endl;
-            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(),
-                                GREEN_COLOR);
+            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), GREEN_COLOR);
             return;
         }
         create_file.close();
@@ -123,36 +146,32 @@ void LogConfig::reportSuccess(int status, const std::string &message)
         {
             std::cerr << WHITE_COLOR << "[" << time_str << "] Error: Failed to open newly created log file "
                       << STATUS_SUCCESS_LOG_FILE << RESET_COLOR << std::endl;
-            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(),
-                                GREEN_COLOR);
+            printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), GREEN_COLOR);
             return;
         }
     }
 
-    // 로그 파일에 상태 코드, 메시지와 시간을 기록
-    log_file << "[" << time_str.c_str() << "] "
+    log_file << "[" << time_str << "] "
              << "Status: " << status << ", Message: " << message << std::endl;
     log_file.close();
-
-    // 성공 로그는 초록색으로 콘솔에 출력
+#endif
     printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), GREEN_COLOR);
 }
 
 void LogConfig::reportError(int status, const std::string &message)
 {
+    std::string time_str = getCurrentTimeStr();
+#ifdef DEV_MODE
     ensureLogDirectoryExists();
 
-    std::string time_str = getCurrentTimeStr();
     std::ofstream log_file(STATUS_ERROR_LOG_FILE, std::ios::app);
     if (!log_file.is_open())
     {
-        // 파일 생성 시도
         std::ofstream create_file(STATUS_ERROR_LOG_FILE);
         if (!create_file.is_open())
         {
             std::cerr << WHITE_COLOR << "[" << time_str << "] Error: Failed to create log file "
                       << STATUS_ERROR_LOG_FILE << RESET_COLOR << std::endl;
-            // 에러 코드에 따른 색상 결정
             std::string color = WHITE_COLOR;
             if (status >= 500)
                 color = RED_COLOR;
@@ -177,26 +196,23 @@ void LogConfig::reportError(int status, const std::string &message)
         }
     }
 
-    // 로그 파일에 상태 코드, 메시지와 시간을 기록
     log_file << "[" << time_str << "] "
              << "Status: " << status << ", Message: " << message << std::endl;
     log_file.close();
-
-    // 에러 로그의 색상 결정: 500 이상은 빨간색, 400대는 노란색, 그 외는 기본 흰색
+#endif
     std::string color = WHITE_COLOR;
     if (status >= 500)
         color = RED_COLOR;
     else if (status >= 400 && status < 500)
         color = YELLOW_COLOR;
-
     printColoredMessage("Status: " + intToString(status) + ", Message: " + message, time_str.c_str(), color);
 }
 
 void LogConfig::reportInternalError(const std::string &message)
 {
-    ensureLogDirectoryExists();
-
     std::string time_str = getCurrentTimeStr();
+#ifdef DEV_MODE
+    ensureLogDirectoryExists();
 
     std::ofstream log_file(INTERNAL_ERROR_LOG_FILE, std::ios::app);
     if (!log_file.is_open())
@@ -220,27 +236,8 @@ void LogConfig::reportInternalError(const std::string &message)
         }
     }
 
-    // 내부 에러 로그 파일에 기록
     log_file << "[" << time_str << "] INTERNAL ERROR: " << message << std::endl;
     log_file.close();
-
-    // 콘솔에 보라색(MAGENTA)으로 내부 에러 메시지 출력
+#endif
     printColoredMessage("INTERNAL ERROR: " + message, time_str.c_str(), MAGENTA_COLOR);
-}
-
-void LogConfig::ensureLogDirectoryExists()
-{
-    const char *logDir = LOG_DIR;
-    struct stat st;
-    if (stat(logDir, &st) == -1)
-    {
-        if (mkdir(logDir, 0755) == -1)
-        {
-            std::cerr << "Error: Failed to create log directory " << logDir << ": " << strerror(errno) << std::endl;
-        }
-        else
-        {
-            std::cerr << "Log directory created: " << logDir << std::endl;
-        }
-    }
 }

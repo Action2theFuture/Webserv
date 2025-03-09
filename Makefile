@@ -1,6 +1,14 @@
-NAME = webserv
+COLOR_RESET = \033[0m
+COLOR_RED = \033[1;31m
+COLOR_GREEN = \033[1;32m
+COLOR_YELLOW = \033[1;33m
+COLOR_BLUE = \033[1;34m
+COLOR_CYAN = \033[1;36m
 
+NAME = webserv
 UNAME_S := $(shell uname)
+
+SPINNER_SCRIPT = assets/spinner.sh
 
 OBJ = $(SRC:.cpp=.o)
 
@@ -12,17 +20,22 @@ LOG_DIR = logs
 SRC_DIR = src
 OBJ_DIR = obj
 SERVER_DIR = $(SRC_DIR)/Server
+PARSING_DIR = $(SRC_DIR)/Parsing
 REQUEST_DIR = $(SRC_DIR)/Request
 RESPONSE_DIR = $(SRC_DIR)/Response
 POLLER_DIR = $(SRC_DIR)/Poller
 
-SRC = main.cpp Utils.cpp Configuration.cpp Log.cpp
-SERVER = Server.cpp SocketManager.cpp
-REQUEST = Request.cpp Parser.cpp
+SRC = main.cpp Utils.cpp Log.cpp
+PARSING = ConfigurationCore.cpp ConfigurationParse.cpp HttpMultipartParser.cpp \
+	HttpParserUtils.cpp HttpRequestParser.cpp
+SERVER = ServerCore.cpp ServerMatchLocation.cpp SocketManager.cpp \
+	ServerUtils.cpp ServerWrite.cpp ServerEvents.cpp ServerWriteHelper.cpp
+REQUEST = Request.cpp
 RESPONSE = Response.cpp ResponseHandlers.cpp ResponseUtils.cpp \
 		CGIHandler.cpp
 
 SRCS := $(addprefix $(SRC_DIR)/, $(SRC))
+SRCS += $(addprefix $(PARSING_DIR)/, $(PARSING))
 SRCS += $(addprefix $(SERVER_DIR)/, $(SERVER))
 SRCS += $(addprefix $(REQUEST_DIR)/, $(REQUEST))
 SRCS += $(addprefix $(RESPONSE_DIR)/, $(RESPONSE))
@@ -39,28 +52,41 @@ endif
 
 OBJS := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-all: $(NAME)
+all: $(NAME) 
+	@ulimit -S -n 65536
 
 $(NAME): $(OBJS)
-	$(CPP) $(CFLAGS) -o $@ $(OBJS)
+	@$(CPP) $(CFLAGS) -o $@ $(OBJS)  > /dev/null 2>&1 & COMPILER_PID=$$!; \
+	./$(SPINNER_SCRIPT) $$COMPILER_PID; \
+	wait $$COMPILER_PID
+	@echo "$(COLOR_GREEN)Program Name : $(NAME)$(COLOR_RESET)"
+
+OBJ_FILES_SPINNER_PID=
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(CPP) $(CFLAGS) $(IFLAGS) -c $< -o $@
+	@$(CPP) $(CFLAGS) $(IFLAGS) -c $< -o $@ > /dev/null 2>&1
 
 $(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+	@mkdir -p $(OBJ_DIR)
+
+dev : CFLAGS += -DDEV_MODE
+dev : fclean $(NAME)
+	@echo "$(COLOR_GREEN)Start DeVMoDe! 🛠️$(COLOR_RESET)"
 
 debug : CFLAGS += -g3 -fsanitize=address
 debug : fclean $(NAME)
+	@echo "$(COLOR_GREEN)Start Debugging! 🛠️$(COLOR_RESET)"
 
 clean:
-	rm -rf $(OBJ_DIR)
+	@rm -rf $(OBJ_DIR)
+	@echo "$(COLOR_RED)Cleaning completed successfully 🧹$(COLOR_RESET)"
 
 fclean: clean
-	rm -f $(NAME)
-	rm -rf $(LOG_DIR)
+	@rm -f $(NAME)
+	@rm -rf logs uploads
+	@echo "$(COLOR_GREEN)Recompleted successfully 🎉$(COLOR_RESET)"
 
 re: fclean all
 
-.PHONY: all clean fclean re debug
+.PHONY: all dev clean fclean re debug

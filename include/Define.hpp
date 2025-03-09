@@ -16,5 +16,6 @@
 #define MAX_EVENTS 1024
 #define BUFFER_SIZE 4096
 #define PYTHON_PATH "/usr/bin/python3"
+#define ASCII_ART_PATH "./assets/ascii_art"
 
 #endif // DEFINE_HPP
