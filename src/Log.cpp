@@ -87,24 +87,8 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index, std:
         ofs << std::endl;
         ofs << "      Directory Listing: " << (location.directory_listing ? "on" : "off") << std::endl;
         ofs << "      Index: " << location.index << std::endl;
-        ofs << "      CGI Extensions: ";
-        for (size_t k = 0; k < location.cgi_extension.size(); ++k)
-        {
-            ofs << location.cgi_extension[k];
-            if (k != location.cgi_extension.size() - 1)
-            {
-                ofs << ", ";
-            }
-        }
-        ofs << "      CGI Paths: ";
-        for (size_t k = 0; k < location.cgi_path.size(); ++k)
-        {
-            ofs << location.cgi_path[k];
-            if (k != location.cgi_path.size() - 1)
-            {
-                ofs << ", ";
-            }
-        }
+        ofs << "      CGI Extension: " << location.cgi_extension << std::endl;
+        ofs << "      CGI Path: " << location.cgi_path << std::endl;
         ofs << std::endl;
     }
 }
