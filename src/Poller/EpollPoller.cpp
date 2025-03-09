@@ -10,7 +10,7 @@ EpollPoller::EpollPoller() : _changes()
     _epoll_fd = epoll_create1(0);
     if (_epoll_fd == -1)
     {
-        LogConfig::reportInternalError("epoll_create1 failed: " + std::string(strerror(errno)));
+        std::cerr << "epoll_create1 failed: " << strerror(errno) << std::endl;
         exit(EXIT_FAILURE);
     }
     // Reserve space for change events similar to Kqueue's fixed array size.
@@ -34,8 +34,8 @@ bool EpollPoller::add(int fd, uint32_t events)
 
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
     {
-        LogConfig::reportInternalError("epoll_ctl add failed for fd " + intToString(fd) + ": " +
-                                       std::string(strerror(errno)));
+        std::cerr << "epoll_ctl add failed for fd " << intToString(fd) << ": " 
+                  << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -53,8 +53,8 @@ bool EpollPoller::modify(int fd, uint32_t events)
 
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, fd, &ev) == -1)
     {
-        LogConfig::reportInternalError("epoll_ctl modify failed for fd " + intToString(fd) + ": " +
-                                       std::string(strerror(errno)));
+        std::cerr << "epoll_ctl modify failed for fd " << intToString(fd) << ": " 
+                  << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -64,8 +64,8 @@ bool EpollPoller::remove(int fd)
 {
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1)
     {
-        LogConfig::reportInternalError("epoll_ctl remove failed for fd " + intToString(fd) + ": " +
-                                       std::string(strerror(errno)));
+        std::cerr << "epoll_ctl remove failed for fd " << intToString(fd) << ": " 
+                  << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -78,7 +78,7 @@ int EpollPoller::poll(std::vector<Event> &events_out, int timeout)
     int nevents = epoll_wait(_epoll_fd, events, MAX_EVENTS, timeout);
     if (nevents == -1)
     {
-        LogConfig::reportInternalError("epoll_wait failed: " + std::string(strerror(errno)));
+        std::cerr << "epoll_wait failed: " << strerror(errno) << std::endl;
         return -1;
     }
     events_out.clear();
@@ -86,8 +86,16 @@ int EpollPoller::poll(std::vector<Event> &events_out, int timeout)
     {
         if (events[i].events & EPOLLERR)
         {
-            LogConfig::reportInternalError("epoll event error on fd " + intToString(events[i].data.fd) + ": " +
-                                           std::string(strerror(errno)));
+            int err = 0;
+            socklen_t len = sizeof(err);
+            if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0) {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
+                      << ": " << strerror(err) << std::endl;
+            } else  {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
+                      << ": unable to get error" << std::endl;
+            }
+            remove(events[i].data.fd);
             continue;
         }
         Event ev;

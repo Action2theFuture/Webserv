@@ -5,9 +5,13 @@
 
 void Server::processEvents(const std::vector<Event> &events)
 {
+    std::set<int>& closed_fds = getClosedFds();
     for (size_t i = 0; i < events.size(); ++i)
     {
         int fd = events[i].fd;
+        // FD가 이미 닫힌 경우는 건너뜁니다.
+        if (closed_fds.find(fd) != closed_fds.end())
+            continue;
         if (fd < 0)
         {
             LogConfig::reportInternalError("Invalid file descriptor in events[" + intToString(i) + "]");
@@ -98,13 +102,32 @@ bool Server::readClientData(int client_fd, std::string &buffer)
 
 bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config, std::string &buffer)
 {
+    static std::map<int, time_t> closed_fds;
+    time_t now = time(NULL);
+    for (std::map<int, time_t>::iterator it = closed_fds.begin(); it != closed_fds.end(); ) {
+        if (now - it->second > 600)
+            closed_fds.erase(it++); // C++98 방식: erase 후 it 증가
+        else
+            ++it;
+    }
+    if (closed_fds.find(client_fd) != closed_fds.end())
+        return true;
+ 
+
     while (true)
     {
         int consumed = 0;
         bool ok = processClientRequest(client_fd, server_config, buffer, consumed);
         if (!ok)
         {
-            // 에러 응답 or 즉시 닫아야 할 경우
+            // 치명적 에러가 발생하면 해당 연결을 종료합니다.
+            safelyCloseClient(client_fd);
+            _partialRequests.erase(client_fd);
+            if (_requestMap.find(client_fd) != _requestMap.end())
+                _requestMap.erase(client_fd);
+            if (_outgoingData.find(client_fd) != _outgoingData.end())
+                _outgoingData.erase(client_fd);
+            closed_fds[client_fd] = now;
             break;
         }
         else if (consumed == 0)
@@ -121,23 +144,47 @@ bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config
                 break;
         }
     }
-    if (_partialRequests.find(client_fd) != _partialRequests.end())
-    {
-        // 만약 close가 필요한 상황이면(응답 끝), safelyCloseClient
-        // → 예: processClientRequest가 false 반환 시
-        //       => break로 넘어왔을 때 close
-        //       => map erase
-        safelyCloseClient(client_fd);
-        _partialRequests.erase(client_fd);
-    }
-
     if (_requestMap.find(client_fd) != _requestMap.end())
-        _requestMap.erase(client_fd);
+    {
+        Request req = _requestMap[client_fd];
+        std::map<std::string, std::string> headers = req.getHeaders();
+        std::string connHeader = "";
+        if (headers.find("Connection") != headers.end())
+            connHeader = headers["Connection"];
+        connHeader = toLower(connHeader);
 
-    if (_outgoingData.find(client_fd) != _outgoingData.end())
-        _outgoingData.erase(client_fd);
+        bool keepAlive = false;
+        std::string httpVersion = req.getHTTPVersion();
 
-    // 최종적으로 handleClientRead가 false 반환 시 상위에서 뭔가 할 수도 있지만,
-    // 여기서는 true로 반환 (더 이상 읽을게 없다는 뜻)
+        if (httpVersion == "HTTP/1.1")
+            keepAlive = (connHeader != "close");
+        else if (httpVersion == "HTTP/1.0")
+            keepAlive = (connHeader == "keep-alive");
+        else
+            keepAlive = false;
+
+        if (!keepAlive)
+        {
+            safelyCloseClient(client_fd);
+            _partialRequests.erase(client_fd);
+            _requestMap.erase(client_fd);
+            _outgoingData.erase(client_fd);
+            closed_fds[client_fd] = now;
+        }
+        else
+        {
+            _partialRequests[client_fd].clear();
+            _requestMap.erase(client_fd);
+            _outgoingData.erase(client_fd);
+        }
+    }
+    else
+    {
+        // requestMap에 해당 FD의 요청 정보가 없는 경우,
+        // 이는 요청이 완전히 파싱되지 않았음을 의미할 수 있으므로,
+        // 연결은 유지하고 추가 데이터를 기다립니다.
+        // 필요에 따라 로깅을 추가할 수 있습니다.
+        // 여기서는 아무런 추가 작업 없이 연결을 유지합니다.
+    }
     return true;
 }

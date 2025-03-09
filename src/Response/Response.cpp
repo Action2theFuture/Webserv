@@ -102,6 +102,8 @@ Response Response::createResponse(const Request &request, const LocationConfig &
         return ResponseHandler::handleFileList(request, location_config, server_config);
     if (path == "/filelist/all" && iequals(method, "delete"))
         return ResponseHandler::handleDeleteAllFiles(location_config, server_config);
+    if (path.find("/query") == 0)
+        return ResponseHandler::handleCatQuery(real_path, request, server_config);
     return ResponseHandler::handleStaticFile(real_path, server_config);
 }
 
