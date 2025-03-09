@@ -102,7 +102,7 @@ bool Server::readClientData(int client_fd, std::string &buffer)
 
 bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config, std::string &buffer)
 {
-        static std::map<int, time_t> closed_fds;
+    static std::map<int, time_t> closed_fds;
     time_t now = time(NULL);
     for (std::map<int, time_t>::iterator it = closed_fds.begin(); it != closed_fds.end(); ) {
         if (now - it->second > 600)
@@ -112,7 +112,6 @@ bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config
     }
     if (closed_fds.find(client_fd) != closed_fds.end())
         return true;
- 
     while (true)
     {
         int consumed = 0;

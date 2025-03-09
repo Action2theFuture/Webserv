@@ -21,14 +21,14 @@ std::set<int>& Server::getClosedFds() {
     return closed;
 }
 
-
 void Server::safelyCloseClient(int client_fd)
 {
-    static std::set<int> closed_fds;
+    std::set<int>& closed_fds = getClosedFds();
     if (closed_fds.find(client_fd) != closed_fds.end())
         return;
     if (!_poller->remove(client_fd)) {
-        std::cerr << "Warning: Failed to remove fd " << intToString(client_fd) << " from poller" << std::endl;
+        std::cerr << "Warning: Failed to remove fd " << intToString(client_fd)
+                  << " from poller" << std::endl;
     }
     shutdown(client_fd, SHUT_WR);
     close(client_fd);

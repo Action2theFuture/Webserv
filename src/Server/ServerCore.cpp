@@ -5,6 +5,21 @@
 #include <errno.h>
 #include <stdlib.h>
 
+static void show_ascii() {
+    std::ifstream file(ASCII_ART_PATH);
+    if (!file) {
+        std::cerr << "Error: Could not open file " << ASCII_ART_PATH << std::endl;
+        return;
+    }
+
+    std::cout << "\033[32m";
+    std::string line;
+    while (std::getline(file, line)) {
+        std::cout << line << std::endl;
+    }
+    std::cout << "\033[0m";
+}
+
 Server::Server(const std::string &configFile) : _poller(NULL)
 {
     Configuration config;
@@ -13,6 +28,7 @@ Server::Server(const std::string &configFile) : _poller(NULL)
         LogConfig::reportInternalError("Failed to parse configuration file.");
         exit(EXIT_FAILURE);
     }
+    show_ascii();
     _server_configs = config.servers;
 #ifdef __linux__
     _poller = new EpollPoller();
