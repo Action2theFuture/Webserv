@@ -85,7 +85,7 @@ Response ResponseHandler::handleStaticFile(const std::string &real_path, const S
     int fd = open(real_path.c_str(), O_RDONLY);
     if (fd == -1)
     {
-        perror("open");
+        LogConfig::reportInternalError("open() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(404, server_config);
     }
     char buffer[BUFFER_SIZE];
@@ -96,7 +96,7 @@ Response ResponseHandler::handleStaticFile(const std::string &real_path, const S
     close(fd);
     if (bytes_read == -1)
     {
-        perror("read");
+        LogConfig::reportInternalError("read() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(500, server_config);
     }
     std::string content_type = getMimeType(real_path);
@@ -208,7 +208,7 @@ Response ResponseHandler::handleGetFileList(const LocationConfig &location_confi
 {
     std::vector<std::string> files;
     if (!ResponseUtil::listUploadedFiles(location_config.upload_directory, files))
-        return Response::createErrorResponse(500, server_config);
+        return Response::createErrorResponse(404, server_config);
     std::string jsonContent = ResponseUtil::generateFileListJSON(files);
     Response res;
     res.setStatus("200 OK");
@@ -259,13 +259,14 @@ bool ResponseHandler::isCGIRequest(const std::string &real_path, const LocationC
     return false;
 }
 
-Response ResponseHandler::handleCatQuery(const std::string &real_path, const Request &request, const ServerConfig &server_config)
+Response ResponseHandler::handleCatQuery(const std::string &real_path, const Request &request,
+                                         const ServerConfig &server_config)
 {
     Response res;
     int fd = open(real_path.c_str(), O_RDONLY);
     if (fd == -1)
     {
-        perror("open");
+        LogConfig::reportInternalError("open() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(404, server_config);
     }
 
@@ -277,7 +278,7 @@ Response ResponseHandler::handleCatQuery(const std::string &real_path, const Req
     close(fd);
     if (bytes_read == -1)
     {
-        perror("read");
+        LogConfig::reportInternalError("read() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(500, server_config);
     }
 
