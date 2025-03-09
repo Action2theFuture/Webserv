@@ -241,4 +241,3 @@ void LogConfig::reportInternalError(const std::string &message)
 #endif
     printColoredMessage("INTERNAL ERROR: " + message, time_str.c_str(), MAGENTA_COLOR);
 }
-

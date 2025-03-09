@@ -112,8 +112,6 @@ bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config
     }
     if (closed_fds.find(client_fd) != closed_fds.end())
         return true;
- 
-
     while (true)
     {
         int consumed = 0;
@@ -162,7 +160,6 @@ bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config
             keepAlive = (connHeader == "keep-alive");
         else
             keepAlive = false;
-
         if (!keepAlive)
         {
             safelyCloseClient(client_fd);

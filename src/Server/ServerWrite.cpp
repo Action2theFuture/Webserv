@@ -15,6 +15,7 @@ void Server::writePendingData(int client_fd)
     {
         safelyCloseClient(client_fd);
         _outgoingData.erase(client_fd);
+        //closed_fds.insert(client_fd);
         return;
     }
     if (!buf.empty())
@@ -29,6 +30,7 @@ void Server::writePendingData(int client_fd)
                                                intToString(client_fd));
             safelyCloseClient(client_fd);
             _outgoingData.erase(client_fd);
+            //closed_fds.insert(client_fd);
         }
     }
     else
