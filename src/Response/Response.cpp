@@ -83,24 +83,46 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
-    if (!ResponseHandler::validateMethod(request, location_config))
+    bool isMethodValid = validateMethod(request, location_config);
+    if (!isMethodValid)
         return ResponseHandler::handleMethodNotAllowed(location_config, server_config);
+
     if (!location_config.redirect.empty())
         return ResponseHandler::handleRedirection(location_config);
+
     std::string real_path;
     if (!getRealPath(path, location_config, server_config, real_path))
         return createErrorResponse(404, server_config);
-    if (ResponseHandler::isCGIRequest(real_path, location_config))
+    bool isCGI = isCGIRequest(real_path, location_config);
+    if (isCGI)
         return ResponseHandler::handleCGI(request, real_path, server_config);
     if (path == "/upload" && iequals(method, "post"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
     if (path == "/filelist")
         return ResponseHandler::handleFileList(request, location_config, server_config);
-    if (path == "/filelist/all" && iequals(method, "delete"))
+    if (path == "/filelist/all" && iequals(method, "DELETE"))
         return ResponseHandler::handleDeleteAllFiles(location_config, server_config);
-    if (path.find("/query") == 0)
-        return ResponseHandler::handleCatQuery(real_path, request, server_config);
     return ResponseHandler::handleStaticFile(real_path, server_config);
+}
+
+bool Response::validateMethod(const Request &request, const LocationConfig &location_config)
+{
+    //using namespace ResponseUtils;
+    std::string method = request.getMethod();
+
+    // 메서드가 허용된 목록에 있는지 확인
+    for (size_t i = 0; i < location_config.methods.size(); ++i)
+    {
+        if (iequals(method, location_config.methods[i]))
+        {
+            return true; // 메서드가 허용됨
+        }
+    }
+
+    // 메서드가 허용되지 않음
+    std::string errorMsg = "Method not allowed: " + method;
+    LogConfig::reportInternalError(errorMsg);
+    return false;
 }
 
 bool Response::getRealPath(const std::string &path, const LocationConfig &location_config,
@@ -116,7 +138,14 @@ bool Response::getRealPath(const std::string &path, const LocationConfig &locati
 
 bool Response::isCGIRequest(const std::string &real_path, const LocationConfig &location_config)
 {
-    return ResponseHandler::isCGIRequest(real_path, location_config);
+    //using namespace ResponseUtils;
+    if (!location_config.cgi_extension.empty() && real_path.size() >= location_config.cgi_extension.size())
+    {
+        std::string ext = real_path.substr(real_path.size() - location_config.cgi_extension.size());
+        if (iequals(ext, location_config.cgi_extension))
+            return true;
+    }
+    return false;
 }
 
 std::string Response::readErrorPageFromFile(const std::string &file_path, int status)

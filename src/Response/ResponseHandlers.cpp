@@ -115,39 +115,61 @@ Response ResponseHandler::handleUpload(const std::string &real_path, const Reque
 {
     const std::vector<UploadedFile> &files = request.getUploadedFiles();
     const std::map<std::string, std::string> &form_fields = request.getFormFields();
+
+    // Validate that there are uploaded files
     if (!ResponseUtil::validateUploadedFiles(files))
     {
         LogConfig::reportInternalError("Uploaded files are empty");
         return Response::createErrorResponse(400, server_config);
     }
+
+    // Get the upload directory
     std::string upload_dir;
     if (!ResponseUtil::getUploadDirectory(location_config, server_config, upload_dir))
         return Response::createErrorResponse(500, server_config);
 
+    // Extract description if provided
     std::string description;
     std::map<std::string, std::string>::const_iterator desc_it = form_fields.find("description");
     if (desc_it != form_fields.end())
     {
         description = desc_it->second;
     }
-    // To do : Handling description
-    std::vector<std::string> allowed_extensions = location_config.allowed_extensions;
+
+    // Allowed file extensions
+    const std::vector<std::string> &allowed_extensions = location_config.allowed_extensions;
     std::vector<std::string> uploaded_filenames;
+
+    // Process each uploaded file
     for (std::vector<UploadedFile>::const_iterator it = files.begin(); it != files.end(); ++it)
     {
-        std::string sanitized_filename;
-        if (!ResponseUtil::saveUploadedFile(upload_dir, *it, sanitized_filename))
-            return Response::createErrorResponse(500, server_config);
+        // Sanitize the filename
+        std::string sanitized_filename = sanitizeFilename(it->filename);
+        std::cout << "DEBUG) sanitized_filename: " << sanitized_filename << std::endl;
+
+        // Check if the file extension is allowed
         if (!ResponseUtil::isFileExtensionAllowed(sanitized_filename, allowed_extensions))
         {
-            std::string errorMsg = "Disallowed extensions: File Name: " + sanitized_filename;
+            std::string errorMsg = "Disallowed extension: File Name: " + sanitized_filename;
             LogConfig::reportInternalError(errorMsg);
             return Response::createErrorResponse(400, server_config);
         }
+
+        // Save the file if the extension is valid
+        if (!ResponseUtil::saveUploadedFile(upload_dir, *it, sanitized_filename))
+        {
+            LogConfig::reportInternalError("Failed to save file: " + sanitized_filename);
+            return Response::createErrorResponse(500, server_config);
+        }
+
+        // Add to the list of successfully uploaded filenames
         uploaded_filenames.push_back(sanitized_filename);
     }
+
+    // Handle static file response (or other post-upload logic)
     return handleStaticFile(real_path, server_config);
 }
+
 
 Response ResponseHandler::handleFileList(const Request &request, const LocationConfig &location_config,
                                          const ServerConfig &server_config)
