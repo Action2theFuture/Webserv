@@ -16,8 +16,7 @@ CGIHandler::~CGIHandler()
 
 void CGIHandler::setEnvironmentVariables(const Request &request, const std::string &script_path)
 {
-    std::string path = request.getPath();
-    setenv("REQUEST_METHOD", path.c_str(), 1);
+    setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
     setenv("SCRIPT_FILENAME", script_path.c_str(), 1);
     setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
     std::map<std::string, std::string> headers = request.getHeaders();
@@ -32,28 +31,11 @@ void CGIHandler::setEnvironmentVariables(const Request &request, const std::stri
     setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
     setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
     setenv("SERVER_SOFTWARE", "Webserv/1.0", 1);
-
-    ////
-    //use PATH_INFO for CGI
-    /* setenv("PATH_INFO", request.getPath().c_str(), 1);
-    std::cout << "DEBUG) Path Info: " << request.getPath().c_str() << std::endl; */
-    ////
 }
 
 bool CGIHandler::execute(const Request &request, const std::string &script_path, std::string &cgi_output,
                          std::string &content_type)
 {
-
-    // Check extension validity
-    std::cout << "DEBUG) Script Path: " << script_path << std::endl;
-    std::string extension = script_path.substr(script_path.find_last_of('.') + 1);
-
-    if (extension != "py" && extension != "php" && extension != "sh" && extension != "pl")
-    {
-        LogConfig::reportInternalError("Unsupported CGI Script Extension: " + extension);
-        return false;
-    }
-
     int pipefd[2];
     if (pipe(pipefd) == -1)
     {
@@ -79,44 +61,18 @@ bool CGIHandler::execute(const Request &request, const std::string &script_path,
             exit(EXIT_FAILURE);
         }
         close(pipefd[1]);
-
         setEnvironmentVariables(request, script_path);
 
-        //execution based on extension
-        if (extension == "py")
-        {
-            char *args[] = {const_cast<char *>("python"), const_cast<char *>(script_path.c_str()), NULL};
-            if (execve(PYTHON_PATH, args, environ) == -1)
-            {
-                perror("execve");
-                LogConfig::reportInternalError("Execve failed for Python: " + std::string(strerror(errno)));
-                exit(EXIT_FAILURE);
-            }
-        }
+        // execve를 사용하여 Python 스크립트 실행 (argv 배열 생성)
+        char *args[] = {const_cast<char *>("python"), const_cast<char *>(script_path.c_str()), NULL};
+        extern char **environ;
+        execve(PYTHON_PATH, args, environ);
 
-        else if (extension == "sh")
-        {
-            char *args[] = {const_cast<char *>("bash"), const_cast<char *>(script_path.c_str()), NULL};
-            if (execve("/bin/bash", args, environ) == -1)
-            {
-                perror("execve");
-                LogConfig::reportInternalError("Execve failed for Bash: " + std::string(strerror(errno)));
-                exit(EXIT_FAILURE);
-            }
-        }
-
-        else if (extension == "pl")
-        {
-            char *args[] = {const_cast<char *>("perl"), const_cast<char *>(script_path.c_str()), NULL};
-            if (execve("/usr/bin/perl", args, environ) == -1)
-            {
-                perror("execve");
-                LogConfig::reportInternalError("Execve failed for Perl: " + std::string(strerror(errno)));
-                exit(EXIT_FAILURE);
-            }
-        }
+        // execve 실패 시
+        perror("execve");
+        LogConfig::reportInternalError("Execve failed: " + std::string(strerror(errno)));
+        exit(EXIT_FAILURE);
     }
-
     else
     {
         close(pipefd[1]);
