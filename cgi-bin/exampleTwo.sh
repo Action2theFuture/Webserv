@@ -19,6 +19,6 @@ else
     echo "Content-Type: text/html"
     echo ""
     echo "<html><body>"
-    echo "<h1>Welcome to our site!</h1>"
+    echo "<h1>Thanks for visiting!</h1>"
     echo "</body></html>"
 fi
