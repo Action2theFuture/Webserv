@@ -5,9 +5,13 @@
 
 void Server::processEvents(const std::vector<Event> &events)
 {
+    std::set<int>& closed_fds = getClosedFds();
     for (size_t i = 0; i < events.size(); ++i)
     {
         int fd = events[i].fd;
+        // FD가 이미 닫힌 경우는 건너뜁니다.
+        if (closed_fds.find(fd) != closed_fds.end())
+            continue;
         if (fd < 0)
         {
             LogConfig::reportInternalError("Invalid file descriptor in events[" + intToString(i) + "]");
@@ -98,6 +102,17 @@ bool Server::readClientData(int client_fd, std::string &buffer)
 
 bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config, std::string &buffer)
 {
+        static std::map<int, time_t> closed_fds;
+    time_t now = time(NULL);
+    for (std::map<int, time_t>::iterator it = closed_fds.begin(); it != closed_fds.end(); ) {
+        if (now - it->second > 600)
+            closed_fds.erase(it++); // C++98 방식: erase 후 it 증가
+        else
+            ++it;
+    }
+    if (closed_fds.find(client_fd) != closed_fds.end())
+        return true;
+ 
     while (true)
     {
         int consumed = 0;
@@ -111,6 +126,7 @@ bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config
                 _requestMap.erase(client_fd);
             if (_outgoingData.find(client_fd) != _outgoingData.end())
                 _outgoingData.erase(client_fd);
+            closed_fds[client_fd] = now;
             break;
         }
         else if (consumed == 0)
@@ -140,24 +156,18 @@ bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config
         std::string httpVersion = req.getHTTPVersion();
 
         if (httpVersion == "HTTP/1.1")
-        {
             keepAlive = (connHeader != "close");
-        }
         else if (httpVersion == "HTTP/1.0")
-        {
             keepAlive = (connHeader == "keep-alive");
-        }
         else
-        {
             keepAlive = false;
-        }
-
         if (!keepAlive)
         {
             safelyCloseClient(client_fd);
             _partialRequests.erase(client_fd);
             _requestMap.erase(client_fd);
             _outgoingData.erase(client_fd);
+            closed_fds[client_fd] = now;
         }
         else
         {

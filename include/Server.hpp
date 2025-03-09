@@ -60,6 +60,7 @@ class Server
     bool isServerSocket(int fd, ServerConfig **matched_server) const;
 
     // [ServerUtils.cpp]
+    std::set<int>& getClosedFds();
     ServerConfig &findMatchingServerConfig(int fd);
     void safelyCloseClient(int client_fd);
     bool processClientRequest(int client_fd, const ServerConfig &server_config, const std::string &request_str,
