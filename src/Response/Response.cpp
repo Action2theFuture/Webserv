@@ -97,9 +97,7 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     if (ResponseHandler::isCGIRequest(real_path, location_config))
     {
         return ResponseHandler::handleCGI(request, real_path, server_config);
-    }
-
-    if (path == "/upload" && iequals(method, "post"))
+    if (path == "/upload" && iequals(method, "POST"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
     if (path == "/filelist")
         return ResponseHandler::handleFileList(request, location_config, server_config);
