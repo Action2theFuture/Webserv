@@ -74,11 +74,6 @@ bool SocketManager::readFromSocketOnce(int client_socket, std::string &data)
     }
     else
     {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            // 더 읽을 데이터 없음
-            // 특별히 false를 주면 상위 로직에서 close할 수도 있으니 주의
-            return true;
-        // 오류
         return false;
     }
 }
