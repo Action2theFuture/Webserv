@@ -13,9 +13,12 @@
 
 Response ResponseHandler::handleRedirection(const LocationConfig &location_config)
 {
+    LogConfig::reportSuccess(302, "Moved Permanently");
+
     Response res;
     res.setStatus("301 Moved Permanently");
     res.setHeader("Location", location_config.redirect);
+    res.setHeader("Cache-Control", "max-age=20, public");
     std::string body = "<h1>301 Moved Permanently</h1>";
     res.setBody(body);
     std::stringstream ss;
@@ -24,6 +27,7 @@ Response ResponseHandler::handleRedirection(const LocationConfig &location_confi
     res.setHeader("Content-Type", "text/html");
     return res;
 }
+
 
 Response ResponseHandler::handleCGI(const Request &request, const std::string &real_path,
                                     const ServerConfig &server_config)

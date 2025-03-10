@@ -9,6 +9,7 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     std::istringstream iss(line);
     std::string key;
     iss >> key;
+
     if (key == "methods")
     {
         std::string method;
@@ -21,6 +22,8 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     }
     else if (key == "redirect")
     {
+        std::string status;
+        iss >> status; //status code
         iss >> location_config.redirect;
     }
     else if (key == "directory_listing")
