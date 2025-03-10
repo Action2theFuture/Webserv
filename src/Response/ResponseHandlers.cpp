@@ -423,3 +423,67 @@ Response ResponseHandler::handleCookieAndSession(const Request &request)
     LogConfig::reportSuccess(200, "Cookie delivered: " + mode);
     return res;
 }
+
+
+Response ResponseHandler::handlePost(const Request &request,
+                                     const LocationConfig &location_config,
+                                     const ServerConfig &server_config)
+{
+    // 적용할 최대 본문 크기 결정 (location 설정이 있으면 우선 사용)
+    size_t effective_limit = (location_config.client_max_body_size > 0 ?
+                              location_config.client_max_body_size :
+                              server_config.client_max_body_size);
+    // 요청 본문 크기가 제한을 초과하면 413 (Payload Too Large) 에러 응답 반환
+    if (request.getBody().size() > effective_limit)
+    {
+        LogConfig::reportInternalError("Request body size (" + intToString(request.getBody().size()) +
+                                       ") exceeds limit (" + intToString(effective_limit) + ")");
+        return Response::createErrorResponse(413, server_config);
+    }
+
+    // 정적 파일 (예: static_page.html)을 읽어들임
+    std::string real_path = DEFAULT_INDEX_PATH;
+    int fd = open(real_path.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        LogConfig::reportInternalError("open() failed: " + std::string(strerror(errno)));
+        return Response::createErrorResponse(404, server_config);
+    }
+    char buffer[BUFFER_SIZE];
+    std::string file_content;
+    ssize_t bytes_read;
+    while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
+    {
+        file_content.append(buffer, bytes_read);
+    }
+    close(fd);
+    if (bytes_read == -1)
+    {
+        LogConfig::reportInternalError("read() failed: " + std::string(strerror(errno)));
+        return Response::createErrorResponse(500, server_config);
+    }
+
+    // static_page.html 내의 플레이스홀더 "{{BODY}}"를 POST 데이터로 치환
+    std::string placeholder = "{{BODY}}";
+    size_t pos = file_content.find(placeholder);
+    if (pos != std::string::npos)
+    {
+        // POST 데이터가 없으면 플레이스홀더를 제거
+        if (request.getBody().empty())
+            file_content.replace(pos, placeholder.length(), "");
+        else
+            file_content.replace(pos, placeholder.length(), request.getBody());
+    }
+
+    // 응답 생성
+    Response res;
+    std::string content_type = getMimeType(real_path);
+    res.setStatus("200 OK");
+    res.setBody(file_content);
+    std::stringstream ss;
+    ss << file_content.size();
+    res.setHeader("Content-Length", ss.str());
+    res.setHeader("Content-Type", content_type);
+    LogConfig::reportSuccess(200, "SUCCESS");
+    return res;
+}
