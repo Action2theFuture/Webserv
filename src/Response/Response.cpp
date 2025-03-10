@@ -86,19 +86,14 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     if (!isMethodValid)
         return ResponseHandler::handleMethodNotAllowed(location_config, server_config);
 
-    if (!location_config.redirect.empty() && iequals(method, "GET"))
-    {
-        return ResponseHandler::handleRedirection(location_config);
-    }
-
     std::string real_path;
     if (!getRealPath(path, location_config, server_config, real_path))
         return createErrorResponse(404, server_config);
 
     if (ResponseHandler::isCGIRequest(real_path, location_config))
-    {
         return ResponseHandler::handleCGI(request, real_path, server_config);
-    }
+    if (path == "/redirection" && iequals(method, "GET"))
+        return ResponseHandler::handleRedirection(location_config);
     if (path == "/upload" && iequals(method, "post"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
     if (path == "/filelist")
