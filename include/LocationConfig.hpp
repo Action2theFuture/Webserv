@@ -38,7 +38,7 @@ struct LocationConfig
 
     LocationConfig()
         : path("/"), redirect(""), index("index.html"), 
-        directory_listing(false), client_max_body_size(1)
+        directory_listing(false), client_max_body_size(0)
     {
     }
 };
