@@ -4,8 +4,7 @@ import datetime
 # Get PATH_INFO
 path_info = os.environ.get('PATH_INFO')
 
-
-if path_info == '/env':
+if (path_info == '/env' or path_info == '/env/'):
     # Print environment variables
     print("Content-Type: text/html\n")
     print("<html><body>")

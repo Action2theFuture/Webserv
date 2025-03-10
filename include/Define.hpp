@@ -9,6 +9,7 @@
 #define ROOT_DIRECTORY "./www/html"
 #define DEFAULT_INDEX_PATH "./www/html/index.html"
 #define SUCCESS_200 "200 SUCCESS"
+#define REDIRECTION_301 "301 Moved Permanently"
 #define NOT_FOUND_400 "400 Not Found"
 #define BAD_REQUEST_404 "404 Bad Request"
 #define METHOD_NOT_ALLOWED_405 "405 Method Not Allowed"

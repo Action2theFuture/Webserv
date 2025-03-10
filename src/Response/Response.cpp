@@ -79,7 +79,6 @@ Response Response::buildResponse(const Request &request, const ServerConfig &ser
 Response Response::createResponse(const Request &request, const LocationConfig &location_config,
                                   const ServerConfig &server_config)
 {
-
     std::string method = request.getMethod();
     std::string path = request.getPath();
 
@@ -87,8 +86,11 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     if (!isMethodValid)
         return ResponseHandler::handleMethodNotAllowed(location_config, server_config);
 
-    if (!location_config.redirect.empty())
+    /* if (!location_config.redirect.empty() && iequals(method, "GET"))
+    {
+        std::cout << "DEBUG) Location Redirect Not Empty" << std::endl;
         return ResponseHandler::handleRedirection(location_config);
+    } */
 
     std::string real_path;
     if (!getRealPath(path, location_config, server_config, real_path))
@@ -98,7 +100,8 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     {
         return ResponseHandler::handleCGI(request, real_path, server_config);
     }
-
+    if (path == "/tours" && iequals(method, "GET"))
+        return ResponseHandler::handleRedirection(location_config);
     if (path == "/upload" && iequals(method, "post"))
         return ResponseHandler::handleUpload(real_path, request, location_config, server_config);
     if (path == "/filelist")
@@ -173,6 +176,8 @@ Response Response::createErrorResponse(const int status, const ServerConfig &ser
     std::string status_text;
     if (status == 400)
         status_text = NOT_FOUND_400;
+    else if (status == 301)
+        status_text = REDIRECTION_301;
     else if (status == 404)
         status_text = BAD_REQUEST_404;
     else if (status == 405)
