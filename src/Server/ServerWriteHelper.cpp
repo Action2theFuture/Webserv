@@ -11,29 +11,20 @@ static bool sendAllData(Poller *poller, int client_fd, std::string &buf)
     while (!buf.empty())
     {
         ssize_t sent = send(client_fd, buf.c_str(), buf.size(), 0);
-        if (sent == -1)
+        if (sent > 0)
+            buf.erase(0, sent); // 전송한 만큼 버퍼에서 제거합니다.
+        else if (sent == 0)
+            return false; // send()가 0을 반환하는 경우는 보통 발생하지 않으므로 오류 처리
+        else // sent == -1 인 경우, errno를 사용하지 않으므로 임시 조건으로 처리합니다.
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            if (!poller->modify(client_fd, POLLER_READ | POLLER_WRITE))
             {
-                // 더 이상 전송할 수 없는 상황이면, FD가 다시 쓰기 가능할 때까지
-                // READ와 WRITE 이벤트를 모두 감시하도록 변경합니다.
-                if (!poller->modify(client_fd, POLLER_READ | POLLER_WRITE))
-                {
-                    LogConfig::reportInternalError("sendAllData: Failed to modify events for client_fd " +
-                                                   intToString(client_fd));
-                    return false;
-                }
-                return true;  // 아직 전송할 데이터가 남아 있으므로, 추후 WRITE 이벤트에서 재시도
-            }
-            else
-            {
-                LogConfig::reportInternalError("sendAllData: send() failed for client_fd " + intToString(client_fd) +
-                                               ": " + std::string(strerror(errno)));
+                LogConfig::reportInternalError("sendAllData: Failed to modify events for client_fd " +
+                                               intToString(client_fd));
                 return false;
             }
+            return true; // 남은 데이터가 있으므로, 추후 WRITE 이벤트 발생 시 재시도합니다.
         }
-        // 일부 또는 전체 전송 성공 → 전송된 만큼 버퍼에서 제거
-        buf.erase(0, sent);
     }
     return true;
 }
