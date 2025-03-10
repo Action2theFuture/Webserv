@@ -232,3 +232,51 @@ std::string trimTrailingSlash(const std::string &path)
         return path.substr(0, path.size() - 1);
     return path;
 }
+
+
+size_t parseClientBodySize(const std::string &str)
+{
+    if (str.empty())
+        return 0;
+
+    // 입력 문자열 복사본을 만듭니다.
+    std::string clean = str;
+
+    // 마지막 문자가 ';'라면 제거합니다.
+    if (clean[clean.size() - 1] == ';')
+        clean.erase(clean.size() - 1, 1);
+
+    // clean의 마지막 문자가 접미사(K, M, G 등)인지 확인합니다.
+    char last = clean[clean.size() - 1];
+    size_t multiplier = 1;
+    std::string numPart = clean;
+
+    if (std::isalpha(last))
+    {
+        // 숫자 부분을 추출합니다.
+        numPart = clean.substr(0, clean.size() - 1);
+        switch (last)
+        {
+            case 'K':
+            case 'k':
+                multiplier = 1024;
+                break;
+            case 'M':
+            case 'm':
+                multiplier = 1024 * 1024;
+                break;
+            case 'G':
+            case 'g':
+                multiplier = 1024 * 1024 * 1024;
+                break;
+            default:
+                multiplier = 1;
+                break;
+        }
+    }
+
+    size_t number = 0;
+    std::istringstream iss(numPart);
+    iss >> number;
+    return number * multiplier;
+}

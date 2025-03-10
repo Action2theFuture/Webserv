@@ -53,19 +53,14 @@ endif
 OBJS := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
 
-all: $(NAME) 
+all: $(NAME)
 
 $(NAME): $(OBJS)
-	@$(CPP) $(CFLAGS) -o $@ $(OBJS) > /dev/null 2>&1 & COMPILER_PID=$$!; \
-	./$(SPINNER_SCRIPT) $$COMPILER_PID; \
-	wait $$COMPILER_PID
-	@echo "$(COLOR_GREEN)Program Name : $(NAME)$(COLOR_RESET)"
-
-OBJ_FILES_SPINNER_PID=
+	$(CPP) $(CFLAGS) -o $@ $(OBJS)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	@$(CPP) $(CFLAGS) $(IFLAGS) -c $< -o $@ > /dev/null 2>&1
+	$(CPP) $(CFLAGS) $(IFLAGS) -c $< -o $@
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)

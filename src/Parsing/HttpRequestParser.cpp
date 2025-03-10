@@ -72,7 +72,7 @@ bool Parser::parseRequestLine(const std::string &line, ParsedRequest &req)
     if (secondSpace == std::string::npos)
     {
         secondSpace = line.size();
-        req.httpVersion = "HTTP/1.0";
+        req.httpVersion = "HTTP/1.1";
     }
     else
     {

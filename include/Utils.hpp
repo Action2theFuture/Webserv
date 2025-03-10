@@ -37,4 +37,6 @@ bool readFromSocket(int client_socket, std::string &data, size_t content_length)
 
 void trimString(std::string &str);
 
+size_t parseClientBodySize(const std::string &str);
+
 #endif // UTILS_HPP

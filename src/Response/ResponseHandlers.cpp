@@ -174,9 +174,21 @@ Response ResponseHandler::handleUpload(const std::string &real_path, const Reque
     const std::vector<std::string> &allowed_extensions = location_config.allowed_extensions;
     std::vector<std::string> uploaded_filenames;
 
+    // Determine the effective client body size limit.
+    // If location_config.client_max_body_size is set (non-zero), use it;
+    // otherwise, use server_config.client_max_body_size.
+    size_t effective_limit = (location_config.client_max_body_size > 0 ?
+                              location_config.client_max_body_size :
+                              server_config.client_max_body_size);
     // Process each uploaded file
     for (std::vector<UploadedFile>::const_iterator it = files.begin(); it != files.end(); ++it)
     {
+        if (it->filesize > effective_limit)
+        {
+            std::string errorMsg = "File size exceeds limit: " + it->filename;
+            LogConfig::reportInternalError(errorMsg);
+            return Response::createErrorResponse(413, server_config);
+        }
         // Sanitize the filename
         std::string sanitized_filename = sanitizeFilename(it->filename);
 

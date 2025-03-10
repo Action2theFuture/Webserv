@@ -14,6 +14,7 @@
 #define BAD_REQUEST_404 "404 Bad Request"
 #define METHOD_NOT_ALLOWED_405 "405 Method Not Allowed"
 #define INTERNAL_SERVER_ERROR_500 "500 Internal Server Error"
+#define PAYLOAD_TOO_LARGE_413 "413 Payload Too Lage"
 #define MAX_EVENTS 1024
 #define BUFFER_SIZE 4096
 #define PYTHON_PATH "/usr/bin/python3"
