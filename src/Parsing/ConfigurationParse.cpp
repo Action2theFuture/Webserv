@@ -99,7 +99,6 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
     }
     else if (key == "limit_client_max_body_size")
     {
-        std::cout << "test" << std::endl;
         std::string value;
         iss >> value;
         server_config.client_max_body_size = parseClientBodySize(value);
