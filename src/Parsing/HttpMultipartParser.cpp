@@ -47,6 +47,7 @@ bool Parser::parseMultipartFormData(const std::string &body, const std::string &
             else
                 file.content_type = "application/octet-stream";
             file.data.assign(body.begin() + pos, body.begin() + data_end);
+            file.filesize = file.data.size();
             pos = data_end;
             req.uploaded_files.push_back(file);
         }

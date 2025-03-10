@@ -77,6 +77,7 @@ void LogConfig::printServerConfig(const ServerConfig &server, size_t index, std:
         ofs << std::endl;
         ofs << "      Root: " << location.root << std::endl;
         ofs << "      Upload Directory: " << location.upload_directory << std::endl;
+        ofs << "      Client max body size: " << location.client_max_body_size << std::endl;
         ofs << "      Allowed Extensions: ";
         for (size_t k = 0; k < location.allowed_extensions.size(); ++k)
         {

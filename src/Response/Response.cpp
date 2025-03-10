@@ -172,6 +172,8 @@ Response Response::createErrorResponse(const int status, const ServerConfig &ser
     std::string status_text;
     if (status == 400)
         status_text = NOT_FOUND_400;
+    else if (status == 413)
+        status_text = PAYLOAD_TOO_LARGE_413;
     else if (status == 301)
         status_text = REDIRECTION_301;
     else if (status == 404)

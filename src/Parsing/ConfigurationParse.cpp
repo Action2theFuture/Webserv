@@ -17,9 +17,7 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
             location_config.methods.push_back(method);
     }
     else if (key == "root")
-    {
         iss >> location_config.root;
-    }
     else if (key == "redirect")
     {
         std::string status;
@@ -33,12 +31,23 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
         location_config.directory_listing = (value == "on");
     }
     else if (key == "index")
-    {
         iss >> location_config.index;
-    }
     else if (key == "default_file")
-    {
         iss >> location_config.default_file;
+    else if (key == "upload_directory")
+        iss >> location_config.upload_directory;
+    else if (key == "allowed_extensions")
+    {
+        std::string ext;
+        location_config.allowed_extensions.clear();
+        while (iss >> ext)
+            location_config.allowed_extensions.push_back(ext);
+    }
+    else if (key == "limit_client_max_body_size")
+    {
+        std::string value;
+        iss >> value;
+        location_config.client_max_body_size = parseClientBodySize(value);
     }
     else if (key == "cgi_extension")
     {
@@ -54,37 +63,19 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
         while (iss >> path)
             location_config.cgi_path.push_back(path);
     }
-    else if (key == "upload_directory")
-    {
-        iss >> location_config.upload_directory;
-    }
-    else if (key == "allowed_extensions")
-    {
-        std::string ext;
-        location_config.allowed_extensions.clear();
-        while (iss >> ext)
-            location_config.allowed_extensions.push_back(ext);
-    }
 }
 
-// 서버 설정 한 줄 파싱 (약13줄)
 void Configuration::parseServerConfig(const std::string &line, ServerConfig &server_config)
 {
     std::istringstream iss(line);
     std::string key;
     iss >> key;
     if (key == "listen")
-    {
         iss >> server_config.port;
-    }
     else if (key == "server_name")
-    {
         iss >> server_config.server_name;
-    }
     else if (key == "root")
-    {
         iss >> server_config.root;
-    }
     else if (key == "error_page")
     {
         int code;
@@ -106,11 +97,12 @@ void Configuration::parseServerConfig(const std::string &line, ServerConfig &ser
             server_config.error_pages[code] = full;
         }
     }
-    else if (key == "client_max_body_size")
+    else if (key == "limit_client_max_body_size")
     {
-        size_t sz;
-        iss >> sz;
-        server_config.client_max_body_size = sz;
+        std::cout << "test" << std::endl;
+        std::string value;
+        iss >> value;
+        server_config.client_max_body_size = parseClientBodySize(value);
     }
 }
 
