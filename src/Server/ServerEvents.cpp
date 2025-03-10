@@ -72,20 +72,32 @@ void Server::handleClientRead(int client_fd, const ServerConfig &server_config)
 
 bool Server::readClientData(int client_fd, std::string &buffer)
 {
-    char tmp[BUFFER_SIZE];
-    ssize_t bytes_read = recv(client_fd, tmp, sizeof(tmp), 0);
-    if (bytes_read > 0)
+    while (true)
     {
-        buffer.append(tmp, bytes_read);
-        return true;
+        char tmp[BUFFER_SIZE];
+        ssize_t bytes_read = recv(client_fd, tmp, sizeof(tmp), 0);
+        if (bytes_read > 0)
+        {
+            buffer.append(tmp, bytes_read);
+        }
+        else if (bytes_read == 0)
+        {
+            return false;
+        }
+        else
+        {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            else if (errno == ECONNRESET)
+                return false;
+            else
+            {
+                std::cerr << "recv() failed on fd " << client_fd << ": " << strerror(errno) << std::endl;
+                return false;
+            }
+        }
     }
-    else if (bytes_read == 0)
-        return false;
-    else
-    {
-        std::cerr << "recv() failed on fd " << client_fd << ": " << strerror(errno) << std::endl;
-        return false;
-    }
+    return true;
 }
 
 bool Server::handleReceivedData(int client_fd, const ServerConfig &server_config, std::string &buffer)

@@ -13,7 +13,7 @@
 
 Response ResponseHandler::handleRedirection(const LocationConfig &location_config)
 {
-    LogConfig::reportSuccess(302, "Moved Permanently");
+    LogConfig::reportSuccess(301, "Moved Permanently");
 
     Response res;
     res.setStatus("301 Moved Permanently");
