@@ -5,16 +5,19 @@
 #include <errno.h>
 #include <stdlib.h>
 
-static void show_ascii() {
+static void show_ascii()
+{
     std::ifstream file(ASCII_ART_PATH);
-    if (!file) {
+    if (!file)
+    {
         std::cerr << "Error: Could not open file " << ASCII_ART_PATH << std::endl;
         return;
     }
 
     std::cout << "\033[32m";
     std::string line;
-    while (std::getline(file, line)) {
+    while (std::getline(file, line))
+    {
         std::cout << line << std::endl;
     }
     std::cout << "\033[0m";
@@ -78,6 +81,11 @@ void Server::start()
         }
         processEvents(events);
     }
+}
+
+void Server::stop()
+{
+    _is_running = false;
 }
 
 bool Server::processPollerEvents(std::vector<Event> &events)

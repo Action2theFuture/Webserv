@@ -16,6 +16,7 @@ CPP = c++
 CFLAGS = -Wall -Wextra -Werror -std=c++98
 IFLAGS = -I ./include/
 
+LOG_DIR = logs
 SRC_DIR = src
 OBJ_DIR = obj
 SERVER_DIR = $(SRC_DIR)/Server
@@ -80,7 +81,7 @@ clean:
 fclean: clean
 	@rm -f $(NAME)
 	@rm -rf logs uploads
-	@echo "$(COLOR_GREEN)Recompleted successfully 🎉$(COLOR_RESET)"
+	@echo "$(COLOR_RED)Full Cleaning completed successfully 🧹$(COLOR_RESET)"
 
 re: fclean all
 

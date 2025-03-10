@@ -23,7 +23,8 @@ class ResponseHandler
     static Response handleDeleteAllFiles(const LocationConfig &location_config, const ServerConfig &server_config);
     static Response handleGetFileList(const LocationConfig &location_config, const ServerConfig &server_config);
     static Response handleMethodNotAllowed(const LocationConfig &location_config, const ServerConfig &server_config);
-    static Response handleCatQuery(const std::string &real_path, const Request &request, const ServerConfig &server_config);
+    static Response handleQuery(const std::string &real_path, const Request &request, const ServerConfig &server_config);
+    static Response handleCookieAndSession(const Request &request);
     // 추가: 메서드 유효성 검사 및 CGI 요청 여부 판단
     static bool validateMethod(const Request &request, const LocationConfig &location_config);
     static bool isCGIRequest(const std::string &real_path, const LocationConfig &location_config);

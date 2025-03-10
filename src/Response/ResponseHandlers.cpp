@@ -119,7 +119,7 @@ Response ResponseHandler::handleStaticFile(const std::string &real_path, const S
     int fd = open(real_path.c_str(), O_RDONLY);
     if (fd == -1)
     {
-        perror("open");
+        LogConfig::reportInternalError("open() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(404, server_config);
     }
     char buffer[BUFFER_SIZE];
@@ -130,7 +130,7 @@ Response ResponseHandler::handleStaticFile(const std::string &real_path, const S
     close(fd);
     if (bytes_read == -1)
     {
-        perror("read");
+        LogConfig::reportInternalError("read() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(500, server_config);
     }
     std::string content_type = getMimeType(real_path);
@@ -263,7 +263,7 @@ Response ResponseHandler::handleGetFileList(const LocationConfig &location_confi
 {
     std::vector<std::string> files;
     if (!ResponseUtil::listUploadedFiles(location_config.upload_directory, files))
-        return Response::createErrorResponse(500, server_config);
+        return Response::createErrorResponse(404, server_config);
     std::string jsonContent = ResponseUtil::generateFileListJSON(files);
     Response res;
     res.setStatus("200 OK");
@@ -323,13 +323,14 @@ bool ResponseHandler::isCGIRequest(const std::string &real_path, const LocationC
     return false;
 }
 
-Response ResponseHandler::handleCatQuery(const std::string &real_path, const Request &request, const ServerConfig &server_config)
+Response ResponseHandler::handleQuery(const std::string &real_path, const Request &request,
+                                         const ServerConfig &server_config)
 {
     Response res;
     int fd = open(real_path.c_str(), O_RDONLY);
     if (fd == -1)
     {
-        perror("open");
+        LogConfig::reportInternalError("open() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(404, server_config);
     }
 
@@ -341,7 +342,7 @@ Response ResponseHandler::handleCatQuery(const std::string &real_path, const Req
     close(fd);
     if (bytes_read == -1)
     {
-        perror("read");
+        LogConfig::reportInternalError("read() failed: " + std::string(strerror(errno)));
         return Response::createErrorResponse(500, server_config);
     }
 
@@ -355,6 +356,8 @@ Response ResponseHandler::handleCatQuery(const std::string &real_path, const Req
         key = params.begin()->first;
         value = params.begin()->second;
     }
+    std::cout << key << std::endl;
+    std::cout << value << std::endl;
 
     // 템플릿 파일 내 플레이스홀더 "{{key}}"와 "{{value}}"를 실제 값으로 치환합니다.
     size_t pos = file_content.find("{{key}}");
@@ -381,5 +384,32 @@ Response ResponseHandler::handleCatQuery(const std::string &real_path, const Req
     res.setHeader("Content-Type", content_type);
 
     LogConfig::reportSuccess(200, "SUCCESS");
+    return res;
+}
+
+Response ResponseHandler::handleCookieAndSession(const Request &request)
+{
+    Response res;
+    
+    // 쿼리 파라미터에서 "mode" 값을 가져옵니다. (없으면 기본값 "day")
+    std::map<std::string, std::string> queryParams = request.getQueryParams();
+    std::string mode = "day";
+    if (queryParams.find("mode") != queryParams.end()) {
+        mode = queryParams["mode"];
+    }
+    
+    // mode 쿠키를 설정 (7일 유효, Path=/)
+    std::string cookie = "mode=" + mode + "; Path=/; Max-Age=604800";
+    res.setHeader("Set-Cookie", cookie);
+    
+    std::string body = "Cookie set to " + mode;
+    res.setStatus("200 OK");
+    res.setBody(body);
+    std::stringstream ss;
+    ss << body.size();
+    res.setHeader("Content-Length", ss.str());
+    res.setHeader("Content-Type", "text/plain");
+
+    LogConfig::reportSuccess(200, "Cookie delivered: " + mode);
     return res;
 }
