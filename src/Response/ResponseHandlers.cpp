@@ -13,6 +13,8 @@
 
 Response ResponseHandler::handleRedirection(const LocationConfig &location_config)
 {
+    std::cout << "DEBUG) Inside handleRedirection" << std::endl;
+    std::cout << "DEBUG) location_config.redirect" << location_config.redirect << std::endl;
     LogConfig::reportSuccess(301, "Moved Permanently");
 
     Response res;

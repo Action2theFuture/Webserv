@@ -24,7 +24,9 @@ void Configuration::parseLocationConfig(const std::string &line, LocationConfig 
     {
         std::string status;
         iss >> status; //status code
+        std::cout << "DEBUG) status: " << status << std::endl;
         iss >> location_config.redirect;
+        std::cout << "DEBUG) location_config.redirect: " << location_config.redirect << std::endl;
     }
     else if (key == "directory_listing")
     {
