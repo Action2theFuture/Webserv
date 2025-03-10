@@ -352,8 +352,6 @@ Response ResponseHandler::handleQuery(const std::string &real_path, const Reques
         key = params.begin()->first;
         value = params.begin()->second;
     }
-    std::cout << key << std::endl;
-    std::cout << value << std::endl;
 
     // 템플릿 파일 내 플레이스홀더 "{{key}}"와 "{{value}}"를 실제 값으로 치환합니다.
     size_t pos = file_content.find("{{key}}");
