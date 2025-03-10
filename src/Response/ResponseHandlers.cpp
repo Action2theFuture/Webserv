@@ -433,7 +433,6 @@ Response ResponseHandler::handlePost(const Request &request,
     size_t effective_limit = (location_config.client_max_body_size > 0 ?
                               location_config.client_max_body_size :
                               server_config.client_max_body_size);
-
     // 요청 본문 크기가 제한을 초과하면 413 (Payload Too Large) 에러 응답 반환
     if (request.getBody().size() > effective_limit)
     {
