@@ -90,10 +90,11 @@ Response Response::createResponse(const Request &request, const LocationConfig &
     if (!location_config.redirect.empty())
         return ResponseHandler::handleRedirection(location_config);
 
+    if (path == "/setmode" && iequals(method, "GET"))
+        return ResponseHandler::handleCookieAndSession(request);
     std::string real_path;
     if (!getRealPath(path, location_config, server_config, real_path))
         return createErrorResponse(404, server_config);
-
     if (ResponseHandler::isCGIRequest(real_path, location_config))
         return ResponseHandler::handleCGI(request, real_path, server_config);
     if (path == "/query")

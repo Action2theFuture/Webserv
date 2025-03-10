@@ -382,3 +382,30 @@ Response ResponseHandler::handleQuery(const std::string &real_path, const Reques
     LogConfig::reportSuccess(200, "SUCCESS");
     return res;
 }
+
+Response ResponseHandler::handleCookieAndSession(const Request &request)
+{
+    Response res;
+    
+    // 쿼리 파라미터에서 "mode" 값을 가져옵니다. (없으면 기본값 "day")
+    std::map<std::string, std::string> queryParams = request.getQueryParams();
+    std::string mode = "day";
+    if (queryParams.find("mode") != queryParams.end()) {
+        mode = queryParams["mode"];
+    }
+    
+    // mode 쿠키를 설정 (7일 유효, Path=/)
+    std::string cookie = "mode=" + mode + "; Path=/; Max-Age=604800";
+    res.setHeader("Set-Cookie", cookie);
+    
+    std::string body = "Cookie set to " + mode;
+    res.setStatus("200 OK");
+    res.setBody(body);
+    std::stringstream ss;
+    ss << body.size();
+    res.setHeader("Content-Length", ss.str());
+    res.setHeader("Content-Type", "text/plain");
+
+    LogConfig::reportSuccess(200, "Cookie delivered: " + mode);
+    return res;
+}
