@@ -20,6 +20,8 @@ EpollPoller::EpollPoller() : _changes()
 EpollPoller::~EpollPoller()
 {
     close(_epoll_fd);
+    _changes.clear();
+    std::vector<struct epoll_event>().swap(_changes);
 }
 
 bool EpollPoller::add(int fd, uint32_t events)
@@ -34,8 +36,7 @@ bool EpollPoller::add(int fd, uint32_t events)
 
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &ev) == -1)
     {
-        std::cerr << "epoll_ctl add failed for fd " << intToString(fd) << ": " 
-                  << strerror(errno) << std::endl;
+        std::cerr << "epoll_ctl add failed for fd " << intToString(fd) << ": " << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -53,8 +54,7 @@ bool EpollPoller::modify(int fd, uint32_t events)
 
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, fd, &ev) == -1)
     {
-        std::cerr << "epoll_ctl modify failed for fd " << intToString(fd) << ": " 
-                  << strerror(errno) << std::endl;
+        std::cerr << "epoll_ctl modify failed for fd " << intToString(fd) << ": " << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -64,8 +64,7 @@ bool EpollPoller::remove(int fd)
 {
     if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1)
     {
-        std::cerr << "epoll_ctl remove failed for fd " << intToString(fd) << ": " 
-                  << strerror(errno) << std::endl;
+        std::cerr << "epoll_ctl remove failed for fd " << intToString(fd) << ": " << strerror(errno) << std::endl;
         return false;
     }
     return true;
@@ -88,13 +87,16 @@ int EpollPoller::poll(std::vector<Event> &events_out, int timeout)
         {
             int err = 0;
             socklen_t len = sizeof(err);
-            if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0) {
-                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
-                      << ": " << strerror(err) << std::endl;
-            } else {
-                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd)
-                      << ": unable to get error" << std::endl;
-            }   
+            if (getsockopt(events[i].data.fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0)
+            {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd) << ": " << strerror(err)
+                          << std::endl;
+            }
+            else
+            {
+                std::cerr << "epoll event error on fd " << intToString(events[i].data.fd) << ": unable to get error"
+                          << std::endl;
+            }
             // 연결이 리셋되었으므로 해당 fd를 epoll에서 제거합니다.
             remove(events[i].data.fd);
             continue;

@@ -67,11 +67,15 @@ void Server::initSockets()
         server.server_sockets.push_back(sockfd);
         _poller->add(sockfd, POLLER_READ);
     }
+    std::map<int, std::string>().swap(_partialRequests);
+    std::map<int, std::string>().swap(_outgoingData);
+    std::map<int, Request>().swap(_requestMap);
 }
 
 void Server::start()
 {
-    while (true)
+    _is_running = true;
+    while (_is_running)
     {
         std::vector<Event> events;
         if (!processPollerEvents(events))
