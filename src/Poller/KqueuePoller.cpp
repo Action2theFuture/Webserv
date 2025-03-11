@@ -116,6 +116,11 @@ int KqueuePoller::poll(std::vector<Event> &events_out, int timeout)
 
     if (nevents == -1)
     {
+        if (errno == EINTR)
+        {
+            // SIGINT 등으로 인해 kevent()가 중단된 경우, fatal error가 아니므로 0을 반환합니다.
+            return 0;
+        }
         perror("kevent poll failed");
         return -1;
     }
