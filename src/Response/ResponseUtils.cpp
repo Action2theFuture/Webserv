@@ -207,7 +207,15 @@ bool ResponseUtil::saveUploadedFile(const std::string &upload_dir, const Uploade
         return false;
     }
     if (!file.data.empty())
+    {
         ofs.write(&file.data[0], file.data.size());
+        if (ofs.fail())
+        {
+            LogConfig::reportInternalError("Failed to write to file: " + file_path);
+            ofs.close();
+            return false;
+        }
+    }
     ofs.close();
     return true;
 }
