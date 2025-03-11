@@ -1,19 +1,12 @@
 #include "Server.hpp"
 
+volatile sig_atomic_t shutdown_flag = 0;
 Server *g_server = NULL;
 
 void signalHandler(int signum)
 {
     std::cerr << "\nReceived signal " << signum << ", shutting down server..." << std::endl;
-    if (g_server)
-    {
-        // graceful shutdown 호출: 서버의 stop() 메소드를 호출해서 메인 루프 종료
-        g_server->stop();
-        // 이후 cleanup은 Server의 소멸자에서 수행됩니다.
-        delete g_server;
-        g_server = NULL;
-    }
-    exit(EXIT_SUCCESS);
+    shutdown_flag = 1;
 }
 
 int main(int argc, char *argv[])
@@ -44,6 +37,7 @@ int main(int argc, char *argv[])
         std::cerr << "Server error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-
+    delete g_server;
+    g_server = NULL;
     return EXIT_SUCCESS;
 }
