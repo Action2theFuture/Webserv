@@ -31,7 +31,7 @@ Server::Server(const std::string &configFile) : _poller(NULL)
     if (!config.parseConfigFile(configFile))
     {
         LogConfig::reportInternalError("Failed to parse configuration file.");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Failed to parse configuration file.");
     }
     show_ascii();
     _server_configs = config.servers;
