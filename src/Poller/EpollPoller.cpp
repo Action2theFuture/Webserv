@@ -77,6 +77,8 @@ int EpollPoller::poll(std::vector<Event> &events_out, int timeout)
     int nevents = epoll_wait(_epoll_fd, events, MAX_EVENTS, timeout);
     if (nevents == -1)
     {
+        if (errno == EINTR)
+            return 0;
         std::cerr << "epoll_wait failed: " << strerror(errno) << std::endl;
         return -1;
     }
