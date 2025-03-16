@@ -4,6 +4,7 @@
 #ifdef __APPLE__
 
 #include "Define.hpp"
+#include "Log.hpp"
 #include "Poller.hpp"
 #include <cstdlib>
 #include <cstring>
