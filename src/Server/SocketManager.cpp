@@ -5,8 +5,9 @@ int SocketManager::createSocket(int port)
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
     {
-        LogConfig::reportInternalError("socket() failed for port " + intToString(port));
-        exit(EXIT_FAILURE);
+        std::string errMsg = "socket() failed for port " + intToString(port);
+        LogConfig::reportInternalError(errMsg);
+        throw std::runtime_error(errMsg);
     }
     return sockfd;
 }
@@ -17,15 +18,17 @@ void SocketManager::setSocketNonBlocking(int sockfd, int port)
     int flags = fcntl(sockfd, F_GETFL, 0);
     if (flags == -1)
     {
-        LogConfig::reportInternalError("fcntl(F_GETFL) failed: " + std::string(strerror(errno)));
+        std::string errMsg = "fcntl(F_GETFL) failed: " + std::string(strerror(errno));
+        LogConfig::reportInternalError(errMsg);
         close(sockfd);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(errMsg);
     }
     if (fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == -1)
     {
-        LogConfig::reportInternalError("fcntl(F_SETFL) failed: " + std::string(strerror(errno)));
+        std::string errMsg = "fcntl(F_SETFL) failed: " + std::string(strerror(errno));
+        LogConfig::reportInternalError(errMsg);
         close(sockfd);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(errMsg);
     }
 }
 
@@ -39,12 +42,12 @@ void SocketManager::bindSocket(int sockfd, int port)
 
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
-        std::string errorMsg = "bind() failed for port " + intToString(port) + ": " + strerror(errno);
+        std::string errMsg = "bind() failed for port " + intToString(port) + ": " + strerror(errno);
         if (errno == EADDRINUSE)
-            errorMsg += " (Port already in use)";
-        LogConfig::reportInternalError(errorMsg);
+            errMsg += " (Port already in use)";
+        LogConfig::reportInternalError(errMsg);
         close(sockfd);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(errMsg);
     }
 }
 
@@ -52,9 +55,10 @@ void SocketManager::startListening(int sockfd, int port)
 {
     if (listen(sockfd, SOMAXCONN) < 0)
     {
-        LogConfig::reportInternalError("listen() failed for port " + intToString(port) + ": " + strerror(errno));
+        std::string errMsg = "listen() failed for port " + intToString(port) + ": " + strerror(errno);
+        LogConfig::reportInternalError(errMsg);
         close(sockfd);
-        exit(EXIT_FAILURE);
+        throw std::runtime_error(errMsg);
     }
 }
 

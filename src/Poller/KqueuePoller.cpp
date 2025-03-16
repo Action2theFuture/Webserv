@@ -7,8 +7,8 @@ KqueuePoller::KqueuePoller() : changelist_count(0)
     kqueue_fd = kqueue();
     if (kqueue_fd == -1)
     {
-        perror("kqueue");
-        exit(EXIT_FAILURE);
+        std::string errMsg = "kqueue failed: " + std::string(strerror(errno));
+        throw std::runtime_error(errMsg);
     }
 }
 
@@ -30,7 +30,8 @@ bool KqueuePoller::add(int fd, uint32_t events)
     // kevent 호출로 변경 사항 적용
     if (kevent(kqueue_fd, changes, changelist_count, NULL, 0, NULL) == -1)
     {
-        perror("kevent add failed");
+        std::string errMsg = "kevent add failed: " + std::string(strerror(errno));
+        LogConfig::reportInternalError(errMsg);
         changelist_count = 0; // 초기화
         return false;
     }
@@ -49,7 +50,8 @@ bool KqueuePoller::modify(int fd, uint32_t events)
     {
         if (errno != ENOENT)
         {
-            perror("kevent modify (delete) failed");
+            std::string errMsg = "kevent modify (delete) failed: " + std::string(strerror(errno));
+            LogConfig::reportInternalError(errMsg);
             changelist_count = 0;
             return false;
         }
@@ -67,7 +69,8 @@ bool KqueuePoller::modify(int fd, uint32_t events)
     // kevent 호출로 변경 사항 적용
     if (kevent(kqueue_fd, changes, changelist_count, NULL, 0, NULL) == -1)
     {
-        perror("kevent modify failed");
+        std::string errMsg = "kevent modify failed: " + std::string(strerror(errno));
+        LogConfig::reportInternalError(errMsg);
         changelist_count = 0; // 초기화
         return false;
     }
@@ -88,7 +91,8 @@ bool KqueuePoller::remove(int fd)
     {
         if (errno != ENOENT)
         {
-            perror("kevent remove failed");
+            std::string errMsg = "kevent remove failed: " + std::string(strerror(errno));
+            LogConfig::reportInternalError(errMsg);
             changelist_count = 0; // 초기화
             return false;
         }
@@ -121,7 +125,8 @@ int KqueuePoller::poll(std::vector<Event> &events_out, int timeout)
             // SIGINT 등으로 인해 kevent()가 중단된 경우, fatal error가 아니므로 0을 반환합니다.
             return 0;
         }
-        perror("kevent poll failed");
+        std::string errMsg = "kevent poll failed: " + std::string(strerror(errno));
+        LogConfig::reportInternalError(errMsg);
         return -1;
     }
 
@@ -131,7 +136,9 @@ int KqueuePoller::poll(std::vector<Event> &events_out, int timeout)
     {
         if (events[i].flags & EV_ERROR)
         {
-            std::cerr << "Event error on fd " << events[i].ident << ": " << strerror(events[i].data) << std::endl;
+            std::string errMsg =
+                "Event error on fd " + intToString(events[i].ident) + ": " + std::string(strerror(events[i].data));
+            LogConfig::reportInternalError(errMsg);
             continue;
         }
 
