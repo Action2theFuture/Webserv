@@ -19,6 +19,7 @@
 #include <csignal>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -39,7 +40,7 @@ class Server
 
     // private 멤버 변수에 언더바 접두사 추가
     std::vector<ServerConfig> _server_configs;
-    Poller *_poller;
+    std::auto_ptr<Poller> _poller;
     std::map<int, std::string> _partialRequests;
     std::map<int, std::string> _outgoingData;
     std::map<int, Request> _requestMap;
