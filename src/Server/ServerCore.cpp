@@ -55,7 +55,6 @@ Server::~Server()
             close(_server_configs[i].server_sockets[j]);
         }
     }
-    delete _poller;
     std::map<int, std::string>().swap(_partialRequests);
     std::map<int, std::string>().swap(_outgoingData);
     std::map<int, Request>().swap(_requestMap);
