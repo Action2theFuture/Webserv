@@ -4,6 +4,7 @@
 #ifdef __linux__
 
 #include "Define.hpp"
+#include "Log.hpp"
 #include "Poller.hpp"
 #include <cerrno>
 #include <cstdio>
@@ -28,7 +29,7 @@ class EpollPoller : public Poller
   private:
     int _epoll_fd;
     // _changes will act like the temporary changes array similar to KqueuePoller's 'changes'
-    std::vector<struct epoll_event> _changes;
+    struct epoll_event _events[MAX_EVENTS];
 };
 
 #endif

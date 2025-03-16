@@ -11,11 +11,11 @@ void Server::writePendingData(int client_fd)
     if (closed_fds.find(client_fd) != closed_fds.end())
         return;
     std::string &buf = _outgoingData[client_fd];
-    if (!writePendingDataHelper(_poller, client_fd, buf))
+    if (!writePendingDataHelper(_poller.get(), client_fd, buf))
     {
         safelyCloseClient(client_fd);
         _outgoingData.erase(client_fd);
-        //closed_fds.insert(client_fd);
+        // closed_fds.insert(client_fd);
         return;
     }
     if (!buf.empty())
@@ -25,12 +25,12 @@ void Server::writePendingData(int client_fd)
         if (!_poller->modify(client_fd, POLLER_READ))
         {
             if (errno != ENOENT)
-            // 만약 errno가 ENOENT이면 이미 제거된 것으로 간주하고 무시할 수 있습니다.
+                // 만약 errno가 ENOENT이면 이미 제거된 것으로 간주하고 무시할 수 있습니다.
                 LogConfig::reportInternalError("writePendingData: Failed to reset to READ event for client_fd " +
                                                intToString(client_fd));
             safelyCloseClient(client_fd);
             _outgoingData.erase(client_fd);
-            //closed_fds.insert(client_fd);
+            // closed_fds.insert(client_fd);
         }
     }
     else

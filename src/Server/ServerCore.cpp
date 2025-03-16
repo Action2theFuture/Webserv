@@ -31,14 +31,15 @@ Server::Server(const std::string &configFile) : _poller(NULL)
     if (!config.parseConfigFile(configFile))
     {
         LogConfig::reportInternalError("Failed to parse configuration file.");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Failed to parse configuration file.");
     }
     show_ascii();
     _server_configs = config.servers;
+// _poller를 임시 auto_ptr로 생성하여 RAII를 적용합니다.
 #ifdef __linux__
-    _poller = new EpollPoller();
+    _poller = std::auto_ptr<Poller>(new EpollPoller());
 #elif defined(__APPLE__)
-    _poller = new KqueuePoller();
+    _poller = std::auto_ptr<Poller>(new KqueuePoller());
 #else
 #error "Unsupported OS"
 #endif
@@ -54,7 +55,6 @@ Server::~Server()
             close(_server_configs[i].server_sockets[j]);
         }
     }
-    delete _poller;
     std::map<int, std::string>().swap(_partialRequests);
     std::map<int, std::string>().swap(_outgoingData);
     std::map<int, Request>().swap(_requestMap);
