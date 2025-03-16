@@ -35,10 +35,11 @@ Server::Server(const std::string &configFile) : _poller(NULL)
     }
     show_ascii();
     _server_configs = config.servers;
+// _poller를 임시 auto_ptr로 생성하여 RAII를 적용합니다.
 #ifdef __linux__
-    _poller = new EpollPoller();
+    _poller = std::auto_ptr<Poller>(new EpollPoller());
 #elif defined(__APPLE__)
-    _poller = new KqueuePoller();
+    _poller = std::auto_ptr<Poller>(new KqueuePoller());
 #else
 #error "Unsupported OS"
 #endif
