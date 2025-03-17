@@ -11,7 +11,7 @@ void Server::writePendingData(int client_fd)
     if (closed_fds.find(client_fd) != closed_fds.end())
         return;
     std::string &buf = _outgoingData[client_fd];
-    if (!writePendingDataHelper(_poller.get(), client_fd, buf))
+    if (!writePendingDataHelper(_poller.get() n, client_fd, buf))
     {
         safelyCloseClient(client_fd);
         _outgoingData.erase(client_fd);
